@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configuration
-VALID_BARCODE_LENGTH=2
-SERVER_ADDR=127.0.0.1:8080
+VALID_BARCODE_LENGTH=9
+SERVER_ADDR=http://stuypulse-attendance.appspot.com/
 SHOW_SERVER_RESPONSE_IF_SUCCESS=false
 
 # Log of all IDs
