@@ -7,5 +7,10 @@ Select the SDK for Python
 `dev_appserver.py google-appengine/`
 #### Configure scanner.sh to use localhost:8080
 `SERVER_ADDR=localhost:8080`
+#### Create an administrator
+1. Enable the `/create_admin` route in main.py by uncommenting it  
+2. Run `curl localhost:8080/create_admin -d "email=bob@email.com&pass=password"` to create an admin with email "bob@email.com" and password "password"
+
 #### Deploying to Google App Engine
-`appcfg.py update google-appengine/`
+1. Ensure that the `/create_admin` route is **DISABLED**
+2. Run `appcfg.py update google-appengine/`
