@@ -120,6 +120,18 @@ function dump_data() {
     curl $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
 }
 
+function dump_day() {
+    curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3"
+}
+
+function dump_today() {
+    month=$(date +%m)
+    day=$(date +%d)
+    year=$(date +%Y)
+    curl $SERVER_ADDR/day -d\
+    "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}"
+}
+
 function drop_data() {
     curl $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
 }
@@ -140,6 +152,21 @@ function main() {
     done
 }
 
+function help() {
+    echo -e "Usage: ./scanner.sh [-d|--dump|--day|--dropdb]"
+    echo -e " -d, --dump\t\tDump(show) all attendance data"
+    echo -e " --day\t\t\tShow attendance data for a specific day"
+    echo -e " --today\t\tShow attendance data for today"
+    echo -e " --dropdb\t\tDrop(delete) all attendance data"
+}
+
+if [[ $# -eq 1 ]]; then
+    if [[ $1 == "--help" || $1 == "-h" ]]; then
+        help
+        exit 0
+    fi
+fi
+
 login
 if [[ $# -ge 1 ]]; then
     if [[ $1 == "--dump" || $1 == "-d" ]]; then
@@ -154,8 +181,18 @@ if [[ $# -ge 1 ]]; then
         else
             echo "Aborting."
         fi
+    elif [[ $1 == "--day" ]]; then
+        echo -n "Which month do you want to see the attendance for? (1-12) "
+        read month
+        echo -n "Which day do you want to see the attendance for? (1-31) "
+        read day
+        echo -n "Which year do you want to see the attendance for? (####) "
+        read year
+        dump_day $month $day $year
+    elif [[ $1 == "--today" ]]; then
+        dump_today
     else
-        echo "Usage: ./scanner.sh [-d|--dump|--dropdb]"
+        help
     fi
 else
     main

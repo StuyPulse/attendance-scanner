@@ -29,11 +29,14 @@ def printDatetimes(attendance_dates):
 def printStudent(student):
     return "ID: " + student._key.id() + "\nAttendances: " + printDatetimes(student.attendance_dates) + "\n\n"
 
-def notAlreadyScanned(now, attendance_dates):
-    for date in attendance_dates:
-        if (now.day == date.day and now.month == date.month and now.year == date.year):
-            return False
-    return True
+def notAlreadyScanned(student, now):
+    return not presentOn(student, now.month, now.day, now.year)
+
+def presentOn(student, month, day, year):
+    for date in student.attendance_dates:
+        if (date.day == day and date.month == month and date.year == year):
+            return True
+    return False
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -46,7 +49,7 @@ def index():
                     student = ndb.Key(Student, request.form['id']).get()
                     if not student:
                         student = Student(id=request.form['id'])
-                    if notAlreadyScanned(datetime.datetime.now(), student.attendance_dates):
+                    if notAlreadyScanned(student, datetime.datetime.now()):
                         student.attendance_dates += [datetime.datetime.now()]
                     student.put()
                     return "SUCCESS: Server received: " + request.form['id'] + "\n"
@@ -70,6 +73,25 @@ def dump():
             return retStr
     else:
         return "ERROR: Malformed request\n"
+
+@app.route("/day", methods=['POST'])
+def day():
+    if request.form.has_key('email') and request.form.has_key('pass')\
+    and request.form.has_key('day') and request.form.has_key('month')\
+    and request.form.has_key('year'):
+        if not validate(request.form['email'], request.form['pass']):
+            return "ERROR: Invalid credentials\n"
+        else:
+            students = Student.query()
+            retStr = ""
+            for student in students.iter():
+                if presentOn(student, int(request.form['month']),\
+                             int(request.form['day']), int(request.form['year'])):
+                    retStr += "ID: " + student._key.id() + "\n"
+            return retStr
+    else:
+        return "ERROR: Malformed request\n"
+
 
 @app.route("/dropdb", methods=['POST'])
 def dropdb():
