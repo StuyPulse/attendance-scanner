@@ -4,6 +4,8 @@
 VALID_BARCODE_LENGTH=9
 SERVER_ADDR=http://stuypulse-attendance.appspot.com/
 SHOW_SERVER_RESPONSE_IF_SUCCESS=false
+SAVE_DUMP_OUTPUT=true
+OUTPUT_FILE=OUT
 
 # Log of all IDs
 LOG=$(date +barcode-%m-%d-%Y.log)
@@ -117,23 +119,51 @@ function get_num_failed() {
 }
 
 function dump_data() {
-    curl $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+    if $SAVE_DUMP_OUTPUT; then
+        curl $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE
+        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    else
+        curl $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+    fi
 }
 
 function dump_day() {
-    curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3"
+    if $SAVE_DUMP_OUTPUT; then
+        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3" > $OUTPUT_FILE
+        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    else
+        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3"
+    fi
 }
 
 function dump_today() {
     month=$(date +%m)
     day=$(date +%d)
     year=$(date +%Y)
-    curl $SERVER_ADDR/day -d\
-    "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}"
+    if $SAVE_DUMP_OUTPUT; then
+        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}" > $OUTPUT_FILE
+        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    else
+        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}"
+    fi
+}
+
+function dump_student() {
+    if $SAVE_DUMP_OUTPUT; then
+        curl $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1" > $OUTPUT_FILE
+        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    else
+        curl $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1"
+    fi
 }
 
 function drop_data() {
-    curl $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+    if $SAVE_DUMP_OUTPUT; then
+        curl $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE
+        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    else
+        curl $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+    fi
 }
 
 function main() {
@@ -153,10 +183,11 @@ function main() {
 }
 
 function help() {
-    echo -e "Usage: ./scanner.sh [-d|--dump|--day|--dropdb]"
+    echo -e "Usage: ./scanner.sh [-d|--dump|--day|--today|-s|--student|--dropdb]"
     echo -e " -d, --dump\t\tDump(show) all attendance data"
     echo -e " --day\t\t\tShow attendance data for a specific day"
     echo -e " --today\t\tShow attendance data for today"
+    echo -e " -s, --student\t\tShow attendance data for a student"
     echo -e " --dropdb\t\tDrop(delete) all attendance data"
 }
 
@@ -191,6 +222,10 @@ if [[ $# -ge 1 ]]; then
         dump_day $month $day $year
     elif [[ $1 == "--today" ]]; then
         dump_today
+    elif [[ $1 == "-s" || $1 == "--student" ]]; then
+        echo -n "Please enter the ID for the student: "
+        read id
+        dump_student $id
     else
         help
     fi

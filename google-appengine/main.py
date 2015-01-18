@@ -16,18 +16,24 @@ def validate(email, password):
         return False
     return check_password_hash(admin.password, password)
 
+def printDate(date):
+    return str(date.month) + "/" + str(date.day) + "/" + str(date.year)
+
+def printID(student):
+    return "ID: " + student._key.id()
+
 def printDatetimes(attendance_dates):
-    retStr = "["
+    retStr = "Attendances: ["
     numDates = len(attendance_dates)
     for i in range(numDates):
         date = attendance_dates[i]
-        retStr += str(date.month) + "/" + str(date.day) + "/" + str(date.year)
+        retStr += printDate(date)
         if i < numDates - 1:
             retStr += ", "
     return retStr + "]"
 
 def printStudent(student):
-    return "ID: " + student._key.id() + "\nAttendances: " + printDatetimes(student.attendance_dates) + "\n\n"
+    return printID(student) + "\n" + printDatetimes(student.attendance_dates) + "\n\n"
 
 def notAlreadyScanned(student, now):
     return not presentOn(student, now.month, now.day, now.year)
@@ -87,11 +93,27 @@ def day():
             for student in students.iter():
                 if presentOn(student, int(request.form['month']),\
                              int(request.form['day']), int(request.form['year'])):
-                    retStr += "ID: " + student._key.id() + "\n"
+                    retStr += printID(student) + "\n"
             return retStr
     else:
         return "ERROR: Malformed request\n"
 
+@app.route("/student", methods=['POST'])
+def student():
+    if request.form.has_key('email') and request.form.has_key('pass')\
+    and request.form.has_key('id'):
+        if not validate(request.form['email'], request.form['pass']):
+            return "ERROR: Invalid credentials\n"
+        else:
+            student = ndb.Key(Student, request.form['id']).get()
+            if not student:
+                return "ERROR: Student does not exist.\n"
+            retStr = ""
+            for date in student.attendance_dates:
+                retStr += printDate(date) + "\n"
+            return retStr
+    else:
+        return "ERROR: Malformed request\n"
 
 @app.route("/dropdb", methods=['POST'])
 def dropdb():
