@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, redirect, url_for, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 from google.appengine.ext import ndb
 from models import Student, Administrator
@@ -35,24 +35,27 @@ def notAlreadyScanned(now, attendance_dates):
             return False
     return True
 
-@app.route("/", methods=['POST'])
+@app.route("/", methods=['GET', 'POST'])
 def index():
-    if request.form.has_key('email') and request.form.has_key('pass'):
-        if not validate(request.form['email'], request.form['pass']):
-            return "ERROR: Invalid credentials\n"
-        else:
-            if request.form.has_key('id'):
-                student = ndb.Key(Student, request.form['id']).get()
-                if not student:
-                    student = Student(id=request.form['id'])
-                if notAlreadyScanned(datetime.datetime.now(), student.attendance_dates):
-                    student.attendance_dates += [datetime.datetime.now()]
-                student.put()
-                return "SUCCESS: Server received: " + request.form['id'] + "\n"
+    if request.method == 'POST':
+        if request.form.has_key('email') and request.form.has_key('pass'):
+            if not validate(request.form['email'], request.form['pass']):
+                return "ERROR: Invalid credentials\n"
             else:
-                return "SUCCESS\n"
+                if request.form.has_key('id'):
+                    student = ndb.Key(Student, request.form['id']).get()
+                    if not student:
+                        student = Student(id=request.form['id'])
+                    if notAlreadyScanned(datetime.datetime.now(), student.attendance_dates):
+                        student.attendance_dates += [datetime.datetime.now()]
+                    student.put()
+                    return "SUCCESS: Server received: " + request.form['id'] + "\n"
+                else:
+                    return "SUCCESS\n"
+        else:
+            return "ERROR: Malformed request\n"
     else:
-        return "ERROR: Malformed request\n"
+        return redirect(url_for('webconsole'))
 
 @app.route("/dump", methods=['POST'])
 def dump():
@@ -62,8 +65,8 @@ def dump():
         else:
             students = Student.query()
             retStr = ""
-            for result in students.iter():
-                retStr += printStudent(result)
+            for student in students.iter():
+                retStr += printStudent(student)
             return retStr
     else:
         return "ERROR: Malformed request\n"
@@ -77,12 +80,31 @@ def dropdb():
             students = Student.query()
             num = students.count()
             retStr = ""
-            for result in students.iter():
-                retStr += printStudent(result)
-                result.key.delete()
+            for student in students.iter():
+                retStr += printStudent(student)
+                student.key.delete()
             return retStr + "Deleted " + str(num) + " entries.\n"
     else:
         return "ERROR: Malformed request\n"
+
+@app.route("/webconsole", methods=['GET', 'POST'])
+def webconsole():
+    if request.method == 'POST':
+        if request.form.has_key('email') and request.form.has_key('pass'):
+            if not validate(request.form['email'], request.form['pass']):
+                return "Invalid login credentials"
+            students = Student.query()
+            retStr = "<table><th>ID</th><th>Dates</th>"
+            for student in students.iter():
+                retStr += "<tr>"
+                retStr += "<td>" + student._key.id() + "</td>"
+                retStr += "<td>" + printDatetimes(student.attendance_dates) + "</td>"
+                retStr += "</tr>"
+            return retStr + "</table"
+        else:
+            return render_template("login.html")
+    else:
+        return render_template("login.html")
 
 @app.errorhandler(404)
 def page_not_found(e):

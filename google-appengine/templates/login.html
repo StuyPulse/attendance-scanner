@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1 class="center-text">Welcome to the StuyPulse Attendance Web Console</h1>
+<p class="center-text"><u>Please sign in</u></p>
+    <div id="container" class="center-all">
+        <form id="login" method="POST" action="{{ url_for('webconsole') }}">
+            <label for="email">Email</label>
+            <br/>
+            <input id="email" type="email" name="email" placeholder="Email">
+            <br/>
+            <label for="pass">Password</label>
+            <br/>
+            <input id="pass" type="password" name="pass" placeholder="Password">
+            <br/>
+            <br/>
+            <input type="submit" value="Log In">
+        </form>
+    </div>
+</body>
+</html>
