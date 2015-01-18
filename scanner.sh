@@ -2,7 +2,8 @@
 
 # Configuration
 VALID_BARCODE_LENGTH=2
-SERVER_ADDR=127.0.0.1:5000
+SERVER_ADDR=127.0.0.1:8080
+SHOW_SERVER_RESPONSE_IF_SUCCESS=false
 
 # Log of all IDs
 LOG=$(date +barcode-%m-%d-%Y.log)
@@ -70,6 +71,10 @@ function post_data() {
         printf "\n${RED}${response}${RESET}\n"
         show_prompt
     else
+        if $SHOW_SERVER_RESPONSE_IF_SUCCESS; then
+            printf "\n${GREEN}${response}${RESET}\n"
+            show_prompt
+        fi
         # Increment count of the number of successful IDs
         let count=$count+1
         # The most recent connection was successful, so check if we have any
@@ -111,8 +116,15 @@ function get_num_failed() {
     fi
 }
 
+function dump_data() {
+    curl $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+}
+
+function drop_data() {
+    curl $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+}
+
 function main() {
-    login
     while [[ true ]]; do
         show_prompt
         read barcode
@@ -128,4 +140,23 @@ function main() {
     done
 }
 
-main
+login
+if [[ $# -ge 1 ]]; then
+    if [[ $1 == "--dump" || $1 == "-d" ]]; then
+        printf "${GREEN}Dumping data...${RESET}\n"
+        dump_data
+    elif [[ $1 == "--dropdb" ]]; then
+        printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
+        read ans
+        if [[ $ans == "y" ]]; then
+            printf "${GREEN}Dropping all data...${RESET}\n"
+            drop_data
+        else
+            echo "Aborting."
+        fi
+    else
+        echo "Usage: ./scanner.sh [-d|--dump|--dropdb]"
+    fi
+else
+    main
+fi
