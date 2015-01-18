@@ -9,6 +9,12 @@ app.config['DEBUG'] = True
 # Note: We don't need to call run() since our application is embedded within
 # the App Engine WSGI application server.
 
+def validate(email, password):
+    return email == "bob@gmail.com" and password == "password"
+
+def printStudent(student):
+    return "ID: " + str(student._key) + "\nAttendances: " + str(student.attendance_dates) + "\n\n"
+
 @app.route("/", methods=['POST'])
 def index():
     if request.form.has_key('email') and request.form.has_key('pass'):
@@ -27,9 +33,6 @@ def index():
     else:
         return "ERROR: Malformed request\n"
 
-def validate(email, password):
-    return email == "bob@gmail.com" and password == "password"
-
 @app.route("/dump", methods=['POST'])
 def dump():
     if request.form.has_key('email') and request.form.has_key('pass'):
@@ -39,7 +42,7 @@ def dump():
             students = Student.query()
             retStr = ""
             for result in students.iter():
-                retStr += "ID: " + str(result._key) + "\nAttendances: " + str(result.attendance_dates) + "\n\n"
+                retStr += printStudent(result)
             return retStr
     else:
         return "ERROR: Malformed request\n"
@@ -52,9 +55,11 @@ def dropdb():
         else:
             students = Student.query()
             num = students.count()
+            retStr = ""
             for result in students.iter():
+                retStr += printStudent(result)
                 result.key.delete()
-            return "Deleted " + str(num) + " entries.\n"
+            return retStr + "Deleted " + str(num) + " entries.\n"
     else:
         return "ERROR: Malformed request\n"
 
