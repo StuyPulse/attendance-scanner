@@ -1,6 +1,7 @@
 from flask import Flask, request
+from werkzeug.security import generate_password_hash, check_password_hash
 from google.appengine.ext import ndb
-from models import Student
+from models import Student, Administrator
 import datetime
 
 app = Flask(__name__)
@@ -10,7 +11,10 @@ app.config['DEBUG'] = True
 # the App Engine WSGI application server.
 
 def validate(email, password):
-    return email == "bob@gmail.com" and password == "password"
+    admin = ndb.Key(Administrator, email).get()
+    if not admin:
+        return False
+    return check_password_hash(admin.password, password)
 
 def printDatetimes(attendance_dates):
     retStr = "["
@@ -84,3 +88,14 @@ def dropdb():
 def page_not_found(e):
     """Return a custom 404 error."""
     return 'Sorry, nothing at this URL.', 404
+
+#@app.route("/create_admin", methods=['POST'])
+#def create_admin():
+#    if request.form.has_key('email') and request.form.has_key('pass'):
+#        admin = Administrator(id=request.form['email'])
+#        admin.password = generate_password_hash(request.form['pass'])
+#        admin.put()
+#        return "SUCCESS: Administrator " + request.form['email'] + " was created successfully.\n"
+#    else:
+#        return "ERROR: Malformed request\n"
+
