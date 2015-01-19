@@ -44,10 +44,47 @@ def presentOn(student, month, day, year):
             return True
     return False
 
+def getDump():
+    students = Student.query()
+    retStr = ""
+    for student in students.iter():
+        retStr += printStudent(student)
+    return retStr
+
+def getDay(month, day, year):
+    students = Student.query()
+    retStr = ""
+    for student in students.iter():
+        if presentOn(student, month, day, year):
+            retStr += printID(student) + "\n"
+    return retStr
+
+def getStudent(id):
+    student = ndb.Key(Student, id).get()
+    if not student:
+        return "ERROR: Student does not exist.\n"
+    retStr = ""
+    for date in student.attendance_dates:
+        retStr += printDate(date) + "\n"
+    return retStr
+
+def getDropDatabase():
+    students = Student.query()
+    num = students.count()
+    retStr = ""
+    for student in students.iter():
+        retStr += printStudent(student)
+        student.key.delete()
+    return retStr + "Deleted " + str(num) + " entries.\n"
+
 @app.route("/", methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        if request.form.has_key('email') and request.form.has_key('pass'):
+        if request.form.has_key('email') and\
+           request.form.has_key('pass') and\
+           request.form.has_key('month') and\
+           request.form.has_key('day') and\
+           request.form.has_key('year'):
             if not validate(request.form['email'], request.form['pass']):
                 return "ERROR: Invalid credentials\n"
             else:
@@ -55,8 +92,11 @@ def index():
                     student = ndb.Key(Student, request.form['id']).get()
                     if not student:
                         student = Student(id=request.form['id'])
-                    if notAlreadyScanned(student, datetime.datetime.now()):
-                        student.attendance_dates += [datetime.datetime.now()]
+                    now = datetime.date(int(request.form['year']),\
+                                        int(request.form['month']),\
+                                        int(request.form['day']))
+                    if notAlreadyScanned(student, now):
+                        student.attendance_dates += [now]
                     student.put()
                     return "SUCCESS: Server received: " + request.form['id'] + "\n"
                 else:
@@ -72,11 +112,7 @@ def dump():
         if not validate(request.form['email'], request.form['pass']):
             return "ERROR: Invalid credentials\n"
         else:
-            students = Student.query()
-            retStr = ""
-            for student in students.iter():
-                retStr += printStudent(student)
-            return retStr
+            return getDump()
     else:
         return "ERROR: Malformed request\n"
 
@@ -88,13 +124,8 @@ def day():
         if not validate(request.form['email'], request.form['pass']):
             return "ERROR: Invalid credentials\n"
         else:
-            students = Student.query()
-            retStr = ""
-            for student in students.iter():
-                if presentOn(student, int(request.form['month']),\
-                             int(request.form['day']), int(request.form['year'])):
-                    retStr += printID(student) + "\n"
-            return retStr
+            return getDay(int(request.form['month']), int(request.form['day']),\
+                    int(request.form['year']))
     else:
         return "ERROR: Malformed request\n"
 
@@ -105,13 +136,7 @@ def student():
         if not validate(request.form['email'], request.form['pass']):
             return "ERROR: Invalid credentials\n"
         else:
-            student = ndb.Key(Student, request.form['id']).get()
-            if not student:
-                return "ERROR: Student does not exist.\n"
-            retStr = ""
-            for date in student.attendance_dates:
-                retStr += printDate(date) + "\n"
-            return retStr
+            return getStudent(request.form['id'])
     else:
         return "ERROR: Malformed request\n"
 
@@ -121,32 +146,55 @@ def dropdb():
         if not validate(request.form['email'], request.form['pass']):
             return "ERROR: Invalid credentials\n"
         else:
-            students = Student.query()
-            num = students.count()
-            retStr = ""
-            for student in students.iter():
-                retStr += printStudent(student)
-                student.key.delete()
-            return retStr + "Deleted " + str(num) + " entries.\n"
+            return getDropDatabase()
     else:
         return "ERROR: Malformed request\n"
 
 @app.route("/webconsole", methods=['GET', 'POST'])
 def webconsole():
     if request.method == 'POST':
-        if request.form.has_key('email') and request.form.has_key('pass'):
-            if not validate(request.form['email'], request.form['pass']):
+        # DEBUG
+        #retStr = ""
+        #for field in request.form:
+        #    retStr += str(field) + " : " + str(request.form[field]) + "<br>"
+        #return retStr
+        if request.form.has_key('email') and\
+           request.form.has_key('pass') and\
+           request.form.has_key('student') and\
+           request.form.has_key('day') and \
+           request.form.has_key('action'):
+            if validate(request.form['email'], request.form['pass']):
+                action = request.form['action']
+                if action == 'dump':
+                    students = Student.query()
+                    retStr = "<table><th>ID</th><th>Dates</th>"
+                    for student in students.iter():
+                        retStr += "<tr>"
+                        retStr += "<td>" + student._key.id() + "</td>"
+                        retStr += "<td>" + printDatetimes(student.attendance_dates) + "</td>"
+                        retStr += "</tr>"
+                    return retStr + "</table"
+                elif action == 'day':
+                    dateParts = request.form['day'].split('-')
+                    if len(dateParts) == 3:
+                        retStr = "Attendance for " + dateParts[1] + "/" +\
+                                 dateParts[2] + "/" + dateParts[0] + "<br/>"
+                        retStr += getDay(int(dateParts[1]),\
+                                         int(dateParts[2]),\
+                                         int(dateParts[0])).replace('\n', '<br/>')
+                        return retStr
+                    else:
+                        return "ERROR: Malformed request"
+                elif action == 'student':
+                    retStr = "Attendance for " + request.form['student'] + "<br/>"
+                    retStr += getStudent(request.form['student']).replace('\n', '<br/>')
+                    return retStr
+                elif action == 'drop':
+                    return getDropDatabase().replace('\n','<br/>')
+            else:
                 return "Invalid login credentials"
-            students = Student.query()
-            retStr = "<table><th>ID</th><th>Dates</th>"
-            for student in students.iter():
-                retStr += "<tr>"
-                retStr += "<td>" + student._key.id() + "</td>"
-                retStr += "<td>" + printDatetimes(student.attendance_dates) + "</td>"
-                retStr += "</tr>"
-            return retStr + "</table"
         else:
-            return render_template("login.html")
+            return "ERROR: Malformed request"
     else:
         return render_template("login.html")
 

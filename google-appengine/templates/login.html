@@ -23,8 +23,29 @@
             <input id="pass" type="password" name="pass" placeholder="Password">
             <br/>
             <br/>
-            <input type="submit" value="Log In">
+            <p class="center-text"><u>Select an action</u></p>
+            <label for="dump_radio">Show data</label>
+            <input id="dump_radio" type="radio" name="action" value="dump">
+            <br/>
+            <label for="day_radio">Show data for day</label>
+            <input id="day_radio" type="radio" name="action" value="day">
+            <div id="day_radio_form">
+                <input id="day" type="date" name="day">
+            </div>
+            <br/>
+            <label for="student_radio">Show data for student</label>
+            <input id="student_radio" type="radio" name="action" value="student">
+            <div id="student_radio_form">
+                <input id="student" type="number" name="student">
+            </div>
+            <br/>
+            <label for="drop_radio">Delete all data</label>
+            <input id="drop_radio" type="radio" name="action" value="drop">
+            <br/>
+            <br/>
+            <input type="submit" value="Submit">
         </form>
     </div>
 </body>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </html>

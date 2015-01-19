@@ -7,8 +7,12 @@ SHOW_SERVER_RESPONSE_IF_SUCCESS=false
 SAVE_DUMP_OUTPUT=true
 OUTPUT_FILE=OUT
 
+# Current time
+MONTH=$(date +%m)
+DAY=$(date +%d)
+YEAR=$(date +%Y)
 # Log of all IDs
-LOG=$(date +barcode-%m-%d-%Y.log)
+LOG=barcode-${MONTH}-${DAY}-${YEAR}.log
 # Log of pending IDs that failed to send
 FAILED_LOG=$LOG.FAILED
 
@@ -35,7 +39,7 @@ function login() {
     read -s pass
     echo ""
     ADMIN_PASS=$pass
-    response=$(curl -s $SERVER_ADDR -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
+    response=$(curl -s $SERVER_ADDR -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
         exit 1
@@ -63,7 +67,7 @@ function post_data() {
     if [[ $# != 1 ]]; then
         return -1;
     fi
-    response=$(curl -s $SERVER_ADDR -d "id=$1&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
+    response=$(curl -s $SERVER_ADDR -d "id=$1&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
         # Log any IDs that failed to send to the server
         printf "\n${RED}ERROR: Could not contact server${RESET}\n"
@@ -92,7 +96,7 @@ function post_data() {
                 # Iterate through each failed ID and try to send it to the
                 # server
                 while read line; do
-                    response=$(curl -s $SERVER_ADDR -d "id=$line&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
+                    response=$(curl -s $SERVER_ADDR -d "id=$line&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
                     # If still unsuccessful, append to a new log
                     if [[ ${#response} == 0 || $response =~ "ERROR" ]]; then
                         echo $line >> $FAILED_LOG.new
