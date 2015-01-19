@@ -161,7 +161,9 @@ def webconsole():
         if request.form.has_key('email') and\
            request.form.has_key('pass') and\
            request.form.has_key('student') and\
+           request.form.has_key('month') and \
            request.form.has_key('day') and \
+           request.form.has_key('year') and \
            request.form.has_key('action'):
             if validate(request.form['email'], request.form['pass']):
                 action = request.form['action']
@@ -175,16 +177,12 @@ def webconsole():
                         retStr += "</tr>"
                     return retStr + "</table"
                 elif action == 'day':
-                    dateParts = request.form['day'].split('-')
-                    if len(dateParts) == 3:
-                        retStr = "Attendance for " + dateParts[1] + "/" +\
-                                 dateParts[2] + "/" + dateParts[0] + "<br/>"
-                        retStr += getDay(int(dateParts[1]),\
-                                         int(dateParts[2]),\
-                                         int(dateParts[0])).replace('\n', '<br/>')
-                        return retStr
-                    else:
-                        return "ERROR: Malformed request"
+                    retStr = "Attendance for " + request.form['month'] + "/" +\
+                                request.form['day'] + "/" + request.form['year'] + "<br/>"
+                    retStr += getDay(int(request.form['month']),\
+                                     int(request.form['day']),\
+                                     int(request.form['year'])).replace('\n', '<br/>')
+                    return retStr
                 elif action == 'student':
                     retStr = "Attendance for " + request.form['student'] + "<br/>"
                     retStr += getStudent(request.form['student']).replace('\n', '<br/>')
