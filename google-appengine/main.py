@@ -11,6 +11,8 @@ app.config['DEBUG'] = True
 # the App Engine WSGI application server.
 
 def validate(email, password):
+    if email == '' or password == '':
+        return False
     admin = ndb.Key(Administrator, email).get()
     if not admin:
         return False
@@ -60,6 +62,8 @@ def getDay(month, day, year):
     return retStr
 
 def getStudent(id):
+    if id == '':
+        return "ERROR: Invalid ID.\n"
     student = ndb.Key(Student, id).get()
     if not student:
         return "ERROR: Student does not exist.\n"
