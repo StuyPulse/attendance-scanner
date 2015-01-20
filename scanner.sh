@@ -2,7 +2,7 @@
 
 # Configuration
 VALID_BARCODE_LENGTH=9
-SERVER_ADDR=http://stuypulse-attendance.appspot.com/
+SERVER_ADDR=https://stuypulse-attendance.appspot.com/
 SHOW_SERVER_RESPONSE_IF_SUCCESS=false
 SAVE_DUMP_OUTPUT=true
 OUTPUT_FILE=OUT
