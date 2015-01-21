@@ -6,6 +6,7 @@ SERVER_ADDR=https://stuypulse-attendance.appspot.com/
 SHOW_SERVER_RESPONSE_IF_SUCCESS=false
 SAVE_DUMP_OUTPUT=true
 OUTPUT_FILE=OUT
+OFFLINE=false
 
 # Current time
 MONTH=$(date +%m)
@@ -26,9 +27,6 @@ GREEN="\033[1;32m"
 YELLOW="\033[1;33m"
 MAGENTA="\033[1;35m"
 RESET="\033[m"
-
-# Counter for number of successful IDs
-count=0
 
 function login() {
     # Read login credentials and validate with server
@@ -59,13 +57,18 @@ function show_prompt() {
     if [[ $num_failed != "" ]]; then
         printf "${YELLOW}(!) ${num_failed} IDs failed to send to server${RESET}\n"
     fi
-    echo -n "[${count}] Swipe card: " 
+    echo -n "Swipe card: "
 }
 
 function post_data() {
     # Send ID to server
     if [[ $# != 1 ]]; then
         return -1;
+    fi
+    # If we're in offline mode, then append the IDs to the log of pending IDs
+    if $OFFLINE; then
+        echo $1 >> $FAILED_LOG
+        exit 0
     fi
     response=$(curl -s $SERVER_ADDR -d "id=$1&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
@@ -81,8 +84,6 @@ function post_data() {
             printf "\n${GREEN}${response}${RESET}\n"
             show_prompt
         fi
-        # Increment count of the number of successful IDs
-        let count=$count+1
         # The most recent connection was successful, so check if we have any
         # pending IDs that failed to send
         # Use a lock file to prevent this from being performed
@@ -199,6 +200,9 @@ if [[ $# -eq 1 ]]; then
     if [[ $1 == "--help" || $1 == "-h" ]]; then
         help
         exit 0
+    elif [[ $1 == "--offline" ]]; then
+        OFFLINE=true
+        main
     fi
 fi
 
