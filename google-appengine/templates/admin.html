@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block body %}
+<a href="{{ logout_url }}">Logout</a>
+<h1 class="center-text">Hello {{ user_name }}!</h1>
+<h3 class="center-text"><u>Links</u></h3>
+<ul>
+    <li><a href="{{ create_admin_url }}">Create admin</a></li> 
+</ul>
+{% endblock body %}

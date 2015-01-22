@@ -1,13 +1,21 @@
 {% extends "base.html" %}
 {% block body %}
-<h1>Create new admin</h1>
-<form method="POST" action="{{ url_for('admin/create_admin') }}">
+<a href="{{ logout_url }}">Logout</a>
+<h1 class="center-text">Hello {{ user_name }}</h1>
+<h1 class="center-text">Create new admin</h1>
+<form class="center-all" method="POST" action="{{ url_for('create_admin') }}">
     <label for="email">New Admin Email:</label>
-    <br>
+    <br/>
+    <br/>
     <input type="text" id="email" name="email" placeholder="Admin email">
-    <br>
+    <br/>
+    <br/>
     <label for="email">New Admin Password:</label>
-    <br>
-    <input type="password" id="password" name="password" placeholder="Admin password">
+    <br/>
+    <br/>
+    <input type="password" id="password" name="pass" placeholder="Admin password">
+    <br/>
+    <br/>
+    <input type="submit" value="Submit">
 </form>
-{% endblock %}
+{% endblock body %}
