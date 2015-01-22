@@ -1,106 +1,95 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="description" content="StuyPulse Attendance Web Console">
-    <meta name="keywords" content="StuyPulse, Attendance">
-    <meta name="author" content="Chesley Tan">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
-</head>
-<body>
-    <h1 class="center-text">Welcome to the StuyPulse Attendance Web Console</h1>
+{% extends "base.html" %}
+{% block body %}
+<h1 class="center-text">Welcome to the StuyPulse Attendance Web Console</h1>
 <p class="center-text"><u>Please sign in</u></p>
-    <div id="container" class="center-all">
-        <form id="login" method="POST" action="{{ url_for('webconsole') }}">
-            <label for="email">Email</label>
+<div id="container" class="center-all">
+    <form id="login" method="POST" action="{{ url_for('webconsole') }}">
+        <label for="email">Email</label>
+        <br/>
+        <input id="email" type="email" name="email" placeholder="Email">
+        <br/>
+        <label for="pass">Password</label>
+        <br/>
+        <input id="pass" type="password" name="pass" placeholder="Password">
+        <br/>
+        <br/>
+        <p class="center-text"><u>Select an action</u></p>
+        <label for="dump_radio">Show data</label>
+        <input id="dump_radio" type="radio" name="action" value="dump">
+        <br/>
+        <label for="day_radio">Show data for day</label>
+        <input id="day_radio" type="radio" name="action" value="day">
+        <div id="day_radio_form">
+            <label for="month">Month</label>
             <br/>
-            <input id="email" type="email" name="email" placeholder="Email">
+            <select id="month" name="month" form="login">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
             <br/>
-            <label for="pass">Password</label>
+            <label for="day">Day</label>
             <br/>
-            <input id="pass" type="password" name="pass" placeholder="Password">
+            <select id="day" name="day" form="login">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+                <option value="19">19</option>
+                <option value="20">20</option>
+                <option value="21">21</option>
+                <option value="22">22</option>
+                <option value="23">23</option>
+                <option value="24">24</option>
+                <option value="25">25</option>
+                <option value="26">26</option>
+                <option value="27">27</option>
+                <option value="28">28</option>
+                <option value="29">29</option>
+                <option value="30">30</option>
+                <option value="31">31</option>
+            </select>
             <br/>
+            <label for="year">Year</label>
             <br/>
-            <p class="center-text"><u>Select an action</u></p>
-            <label for="dump_radio">Show data</label>
-            <input id="dump_radio" type="radio" name="action" value="dump">
-            <br/>
-            <label for="day_radio">Show data for day</label>
-            <input id="day_radio" type="radio" name="action" value="day">
-            <div id="day_radio_form">
-                <label for="month">Month</label>
-                <br/>
-                <select id="month" name="month" form="login">
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5">May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
-                    <option value="8">August</option>
-                    <option value="9">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
-                </select>
-                <br/>
-                <label for="day">Day</label>
-                <br/>
-                <select id="day" name="day" form="login">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                    <option value="13">13</option>
-                    <option value="14">14</option>
-                    <option value="15">15</option>
-                    <option value="16">16</option>
-                    <option value="17">17</option>
-                    <option value="18">18</option>
-                    <option value="19">19</option>
-                    <option value="20">20</option>
-                    <option value="21">21</option>
-                    <option value="22">22</option>
-                    <option value="23">23</option>
-                    <option value="24">24</option>
-                    <option value="25">25</option>
-                    <option value="26">26</option>
-                    <option value="27">27</option>
-                    <option value="28">28</option>
-                    <option value="29">29</option>
-                    <option value="30">30</option>
-                    <option value="31">31</option>
-                </select>
-                <br/>
-                <label for="year">Year</label>
-                <br/>
-                <input id="year" type="number" name="year" min="2015" max="9999">
-            </div>
-            <br/>
-            <label for="student_radio">Show data for student</label>
-            <input id="student_radio" type="radio" name="action" value="student">
-            <div id="student_radio_form">
-                <input id="student" type="number" name="student">
-            </div>
-            <br/>
-            <label for="drop_radio">Delete all data</label>
-            <input id="drop_radio" type="radio" name="action" value="drop">
-            <br/>
-            <br/>
-            <input type="submit" value="Submit">
-        </form>
-    </div>
-</body>
+            <input id="year" type="number" name="year" min="2015" max="9999">
+        </div>
+        <br/>
+        <label for="student_radio">Show data for student</label>
+        <input id="student_radio" type="radio" name="action" value="student">
+        <div id="student_radio_form">
+            <input id="student" type="number" name="student">
+        </div>
+        <br/>
+        <label for="drop_radio">Delete all data</label>
+        <input id="drop_radio" type="radio" name="action" value="drop">
+        <br/>
+        <br/>
+        <input type="submit" value="Submit">
+    </form>
+</div>
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</html>
+{% endblock %}
