@@ -1,7 +1,8 @@
 from flask import Flask, request, redirect, url_for, render_template
 from google.appengine.api import users
+from google.appengine.ext import ndb
 from werkzeug.security import generate_password_hash
-from models import Administrator
+from models import *
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -29,10 +30,12 @@ def admin():
 
 @app.route("/admin/settings", methods=['GET', 'POST'])
 def admin_settings():
+    user_name = users.get_current_user().nickname()
+    logout_url=users.create_logout_url('/')
     config = ndb.Key(Settings, 'config').get()
     if not config:
         config = Settings(id='config')
     if request.method == 'POST':
         config.osis_url = request.form['osis-url']
         config.put()
-    return render_template('settings.html', config=config)
+    return render_template('settings.html', config=config, user_name=user_name, logout_url=logout_url)

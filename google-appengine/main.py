@@ -1,8 +1,8 @@
 from flask import Flask, request, redirect, url_for, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 from google.appengine.ext import ndb
-from models import Student, Administrator
-import datetime
+from models import *
+import datetime, urllib2, logging, csv, re
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -46,10 +46,36 @@ def presentOn(student, month, day, year):
             return True
     return False
 
+def getStudentsData():
+    config = ndb.Key(Settings, 'config').get()
+    if not config:
+        return "ERROR: You need to specify the CSV file of the Google Spreadsheet with OSIS"
+    url = config.osis_url
+    try:
+        result = urllib2.urlopen(url)
+        csv_reader = csv.reader(result)
+        osis_meta = csv_reader.next() # Gets the first line in the OSIS Spreadsheet with headers
+        col_name = osis_meta.index("Name")
+        col_id = osis_meta.index("ID")
+        col_osis = osis_meta.index("OSIS")
+        osis_data = {}
+        for row in csv_reader:
+            student_id = ''.join(re.findall(r'\b\d+\b', row[col_osis]))
+            osis_data[int(student_id)] = {'Name': row[col_name], 'ID': row[col_id]}
+        return osis_data
+    except urllib2.URLError, e:
+        logging.error(e)
+        return "ERROR: URL for Google Spreadsheet with OSIS is NOT VALID"
+
 def getDump():
+    osis_data = getStudentsData()
+    if "ERROR" in osis_data:
+        return osis_data
     students = Student.query()
     retStr = ""
     for student in students.iter():
+        if osis_data.has_key(student._key.id()):
+            retStr += "Name: " + osis_data[student._key.id()]['Name'] + "\n" 
         retStr += printStudent(student)
     return retStr
 
@@ -172,11 +198,18 @@ def webconsole():
             if validate(request.form['email'], request.form['pass']):
                 action = request.form['action']
                 if action == 'dump':
+                    osis_data = getStudentsData()
+                    if "ERROR" in osis_data:
+                        return osis_data
                     students = Student.query()
-                    retStr = "<table><th>ID</th><th>Dates</th>"
+                    retStr = "<table><th>ID</th><th>Name</th><th>Dates</th>"
                     for student in students.iter():
                         retStr += "<tr>"
                         retStr += "<td>" + student._key.id() + "</td>"
+                        if osis_data.has_key(student._key.id()):
+                            retStr += "<td>" + osis_data[student._key.id()]['Name'] + "</td>"
+                        else:
+                            retStr += "<td></td>"
                         retStr += "<td>" + printDatetimes(student.attendance_dates) + "</td>"
                         retStr += "</tr>"
                     return retStr + "</table"
