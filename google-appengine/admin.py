@@ -23,7 +23,16 @@ def create_admin():
 
 @app.route("/admin", methods=['GET', 'POST'])
 def admin():
-    create_admin_url = url_for('create_admin')
     user_name = users.get_current_user().nickname()
     logout_url=users.create_logout_url('/')
-    return render_template('admin.html', user_name=user_name, logout_url=logout_url, create_admin_url=create_admin_url)
+    return render_template('admin.html', user_name=user_name, logout_url=logout_url)
+
+@app.route("/admin/settings", methods=['GET', 'POST'])
+def admin_settings():
+    config = ndb.Key(Settings, 'config').get()
+    if not config:
+        config = Settings(id='config')
+    if request.method == 'POST':
+        config.osis_url = request.form['osis-url']
+        config.put()
+    return render_template('settings.html', config=config)

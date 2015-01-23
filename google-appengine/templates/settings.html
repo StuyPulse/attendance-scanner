@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block body %}
+<a href="{{ logout_url }}">Logout</a>
+<h1 class="center-text">Hello {{ user_name }}</h1>
+<h1 class="center-text">Admin Settings</h1>
+<form class="center-all" method="POST" action="{{ url_for('admin_settings') }}">
+    <label for="osis-url">OSIS Url (Google Spreadsheets CSV)</label>
+    <br/>
+    <br/>
+    <input type="text" id="osis-url" name="osis-url" placeholder="OSIS URL" value="{{ config.osis_url }}" style="width:50%;">
+    <br/>
+    <br/>
+    <input type="submit" value="Submit">
+</form>
+{% endblock body %}

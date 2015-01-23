@@ -5,3 +5,6 @@ class Student(ndb.Model):
 
 class Administrator(ndb.Model):
     password = ndb.StringProperty()
+
+class Settings(ndb.Expando):
+    pass

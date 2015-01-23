@@ -4,6 +4,7 @@
 <h1 class="center-text">Hello {{ user_name }}!</h1>
 <h3 class="center-text"><u>Links</u></h3>
 <ul>
-    <li><a href="{{ create_admin_url }}">Create admin</a></li> 
+    <li><a href="{{ url_for('create_admin') }}">Create admin</a></li>
+    <li><a href="{{ url_for('admin_settings') }}">Admin settings</a></li>
 </ul>
 {% endblock body %}
