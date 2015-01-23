@@ -74,8 +74,8 @@ def getDump():
     students = Student.query()
     retStr = ""
     for student in students.iter():
-        if osis_data.has_key(student._key.id()):
-            retStr += "Name: " + osis_data[student._key.id()]['Name'] + "\n" 
+        if osis_data.has_key(int(student._key.id())):
+            retStr += "Name: " + osis_data[int(student._key.id())]['Name'] + "\n"
         retStr += printStudent(student)
     return retStr
 
@@ -206,8 +206,8 @@ def webconsole():
                     for student in students.iter():
                         retStr += "<tr>"
                         retStr += "<td>" + student._key.id() + "</td>"
-                        if osis_data.has_key(student._key.id()):
-                            retStr += "<td>" + osis_data[student._key.id()]['Name'] + "</td>"
+                        if osis_data.has_key(int(student._key.id())):
+                            retStr += "<td>" + osis_data[int(student._key.id())]['Name'] + "</td>"
                         else:
                             retStr += "<td></td>"
                         retStr += "<td>" + printDatetimes(student.attendance_dates) + "</td>"
