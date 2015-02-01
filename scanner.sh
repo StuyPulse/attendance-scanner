@@ -177,6 +177,8 @@ function main() {
         read barcode
         if [[ ${#barcode} != $VALID_BARCODE_LENGTH ]]; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"   
+	elif echo $barcode | grep "[^0-9]\+" > /dev/null; then
+            printf "${RED}ERROR: Invalid barcode${RESET}\n"
         else
             printf "${GREEN}Got barcode: ${barcode}${RESET}\n"
             # Append barcode to log

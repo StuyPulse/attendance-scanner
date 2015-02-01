@@ -119,6 +119,10 @@ def index():
                 return "ERROR: Invalid credentials\n"
             else:
                 if request.form.has_key('id'):
+		    try:
+			int(request.form['id'])
+		    except ValueError:
+			return "ERROR: ID must be a number\n"
                     student = ndb.Key(Student, request.form['id']).get()
                     if not student:
                         student = Student(id=request.form['id'])
