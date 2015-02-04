@@ -2,6 +2,7 @@ from flask import Flask, request, redirect, url_for, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 from google.appengine.ext import ndb
 from models import *
+from httplib import HTTPException
 import datetime, urllib2, logging, csv, re
 
 app = Flask(__name__)
@@ -65,7 +66,10 @@ def getStudentsData():
         return osis_data
     except urllib2.URLError, e:
         logging.error(e)
-        return "ERROR: URL for Google Spreadsheet with OSIS is NOT VALID"
+        return "ERROR: URL for Google Spreadsheet with OSIS numbers is NOT VALID"
+    except HTTPException, e:
+        logging.error(e)
+        return "ERROR: Could not fetch Google Spreadsheet with OSIS numbers"
 
 def getDump():
     osis_data = getStudentsData()
@@ -103,17 +107,32 @@ def getCSV():
     if "ERROR" in osis_data:
         return osis_data
     students = Student.query()
-    retStr = "ID,Name,Dates\n"
+    retStr = "ID,Name,"
+    dates = []
+    # Get all valid attendance dates
+    for student in students.iter():
+        for date in student.attendance_dates:
+            if date not in dates:
+                dates.append(date)
+    numDates = len(dates)
+    # Add dates to csv
+    for i in range(numDates):
+        date = dates[i]
+        retStr += printDate(date)
+        if i < numDates - 1:
+            retStr += ","
+    retStr += "\n"
     for student in students.iter():
         retStr += student._key.id() + ","
         if osis_data.has_key(int(student._key.id())):
             retStr += osis_data[int(student._key.id())]['Name'] + ","
         else:
             retStr += ","
-        numDates = len(student.attendance_dates)
         for i in range(numDates):
-            date = student.attendance_dates[i]
-            retStr += printDate(date)
+            if dates[i] in student.attendance_dates:
+                retStr += "Y"
+            else:
+                retStr += "N"
             if i < numDates - 1:
                 retStr += ","
         retStr += "\n"

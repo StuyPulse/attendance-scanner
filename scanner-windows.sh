@@ -164,8 +164,8 @@ function dump_student() {
 
 function dump_csv() {
     if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/csv -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE
-        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+        curl $SERVER_ADDR/csv -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE.csv
+        printf "${GREEN}Output saved to file '${OUTPUT_FILE}.csv'${RESET}\n"
     else
         curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
     fi
