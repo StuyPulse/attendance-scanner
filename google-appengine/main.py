@@ -98,6 +98,27 @@ def getStudent(id):
         retStr += printDate(date) + "\n"
     return retStr
 
+def getCSV():
+    osis_data = getStudentsData()
+    if "ERROR" in osis_data:
+        return osis_data
+    students = Student.query()
+    retStr = "ID,Name,Dates\n"
+    for student in students.iter():
+        retStr += student._key.id() + ","
+        if osis_data.has_key(int(student._key.id())):
+            retStr += osis_data[int(student._key.id())]['Name'] + ","
+        else:
+            retStr += ","
+        numDates = len(student.attendance_dates)
+        for i in range(numDates):
+            date = student.attendance_dates[i]
+            retStr += printDate(date)
+            if i < numDates - 1:
+                retStr += ","
+        retStr += "\n"
+    return retStr
+
 def getDropDatabase():
     students = Student.query()
     num = students.count()
@@ -174,6 +195,16 @@ def student():
     else:
         return "ERROR: Malformed request\n"
 
+@app.route("/csv", methods=['POST'])
+def csvDump():
+    if request.form.has_key('email') and request.form.has_key('pass'):
+        if not validate(request.form['email'], request.form['pass']):
+            return "ERROR: Invalid credentials\n"
+        else:
+            return getCSV()
+    else:
+        return "ERROR: Malformed request\n"
+
 @app.route("/dropdb", methods=['POST'])
 def dropdb():
     if request.form.has_key('email') and request.form.has_key('pass'):
@@ -217,6 +248,8 @@ def webconsole():
                         retStr += "<td>" + printDatetimes(student.attendance_dates) + "</td>"
                         retStr += "</tr>"
                     return retStr + "</table"
+                elif action == 'csv':
+                    return getCSV().replace('\n', '<br/>')
                 elif action == 'day':
                     retStr = "Attendance for " + request.form['month'] + "/" +\
                                 request.form['day'] + "/" + request.form['year'] + "<br/>"
@@ -228,8 +261,6 @@ def webconsole():
                     retStr = "Attendance for " + request.form['student'] + "<br/>"
                     retStr += getStudent(request.form['student']).replace('\n', '<br/>')
                     return retStr
-                elif action == 'drop':
-                    return getDropDatabase().replace('\n','<br/>')
             else:
                 return "Invalid login credentials"
         else:

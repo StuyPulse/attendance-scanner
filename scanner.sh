@@ -162,6 +162,15 @@ function dump_student() {
     fi
 }
 
+function dump_csv() {
+    if $SAVE_DUMP_OUTPUT; then
+        curl $SERVER_ADDR/csv -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE
+        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    else
+        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+    fi
+}
+
 function drop_data() {
     if $SAVE_DUMP_OUTPUT; then
         curl $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE
@@ -195,6 +204,7 @@ function help() {
     echo -e " --day\t\t\tShow attendance data for a specific day"
     echo -e " --today\t\tShow attendance data for today"
     echo -e " -s, --student\t\tShow attendance data for a student"
+    echo -e " -c, --csv\t\tExport data to CSV"
     echo -e " --dropdb\t\tDrop(delete) all attendance data"
 }
 
@@ -232,6 +242,8 @@ if [[ $# -ge 1 ]]; then
         dump_day $month $day $year
     elif [[ $1 == "--today" ]]; then
         dump_today
+    elif [[ $1 == "-c" || $1 == "--csv" ]]; then
+        dump_csv
     elif [[ $1 == "-s" || $1 == "--student" ]]; then
         echo -n "Please enter the ID for the student: "
         read id

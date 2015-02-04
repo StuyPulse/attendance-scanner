@@ -2,7 +2,6 @@ var dayRadio;
 var dayForm;
 var studentRadio;
 var studentForm;
-var dropRadio;
 
 function handleRadioChanged() {
     if (dayRadio.checked)
@@ -13,8 +12,6 @@ function handleRadioChanged() {
         studentForm.style.display = ""; 
     else
         studentForm.style.display = "none"; 
-    if (dropRadio.checked)
-        alert("WARNING: This will delete ALL the data! Please make sure this is what you want to do.");
 }
 
 function init() {
@@ -24,7 +21,6 @@ function init() {
     studentForm = document.getElementById('student_radio_form');
     studentForm.style.display = "none";
     studentRadio = document.getElementById('student_radio');
-    dropRadio = document.getElementById('drop_radio');
     radios = document.getElementsByName('action');
     for (var i = 0;i < radios.length;++i) {
         radios[i].addEventListener("change", handleRadioChanged); 
