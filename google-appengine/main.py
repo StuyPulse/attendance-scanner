@@ -149,9 +149,7 @@ def getCSV():
             retStr += ","
         for i in range(numDates):
             if dates[i] in student.attendance_dates:
-                retStr += "Y"
-            else:
-                retStr += "N"
+                retStr += "X"
             if i < numDates - 1:
                 retStr += ","
         retStr += "\n"
