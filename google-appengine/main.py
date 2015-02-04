@@ -116,6 +116,7 @@ def getCSV():
                 dates.append(date)
     numDates = len(dates)
     # Add dates to csv
+    dates = sorted(dates, key=lambda date: map(int, printDate(date).split('/')))
     for i in range(numDates):
         date = dates[i]
         retStr += printDate(date)
