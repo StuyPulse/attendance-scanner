@@ -38,6 +38,24 @@ def printDatetimes(attendance_dates):
 def printStudent(student):
     return printID(student) + "\n" + printDatetimes(student.attendance_dates) + "\n\n"
 
+def compareDatetimes(a, b):
+    if a.year > b.year:
+        return 1
+    elif a.year < b.year:
+        return -1
+    else:
+        if a.month > b.month:
+            return 1
+        elif a.month < b.month:
+            return -1
+        else:
+            if a.day > b.day:
+                return 1
+            elif a.day < b.day:
+                return -1
+            else:
+                return 0
+
 def notAlreadyScanned(student, now):
     return not presentOn(student, now.month, now.day, now.year)
 
@@ -116,7 +134,7 @@ def getCSV():
                 dates.append(date)
     numDates = len(dates)
     # Add dates to csv
-    dates = sorted(dates, key=lambda date: map(int, printDate(date).split('/')))
+    dates = sorted(dates, cmp=lambda a,b: compareDatetimes(a, b))
     for i in range(numDates):
         date = dates[i]
         retStr += printDate(date)
