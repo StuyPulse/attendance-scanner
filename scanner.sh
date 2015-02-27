@@ -162,6 +162,15 @@ function dump_student() {
     fi
 }
 
+function delete_date_for_student() {
+    if $SAVE_DUMP_OUTPUT; then
+        curl $SERVER_ADDR/delete -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3&id=$4" > $OUTPUT_FILE
+        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    else
+        curl $SERVER_ADDR/delete -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3&id=$4"
+    fi
+}
+
 function dump_csv() {
     if $SAVE_DUMP_OUTPUT; then
         curl $SERVER_ADDR/csv -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE.csv
@@ -205,6 +214,7 @@ function help() {
     echo -e " --today\t\tShow attendance data for today"
     echo -e " -s, --student\t\tShow attendance data for a student"
     echo -e " -c, --csv\t\tExport data to CSV"
+    echo -e " --delete\t\tDelete attendance for a student on a particular day"
     echo -e " --dropdb\t\tDrop(delete) all attendance data"
 }
 
@@ -225,6 +235,16 @@ if [[ $# -ge 1 ]]; then
     if [[ $1 == "--dump" || $1 == "-d" ]]; then
         printf "${GREEN}Dumping data...${RESET}\n"
         dump_data
+    elif [[ $1 == "--delete" ]]; then
+        echo -n "Please enter the ID for the student: "
+        read id
+        echo -n "What is the year of the day you want to delete? (####) "
+        read year
+        echo -n "What is the month of the day you want to delete? (1-12) "
+        read month
+        echo -n "What is the day you want to delete? (1-31) "
+        read day
+        delete_date_for_student $month $day $year $id
     elif [[ $1 == "--dropdb" ]]; then
         printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
         read ans

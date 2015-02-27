@@ -6,7 +6,7 @@ from httplib import HTTPException
 import datetime, urllib2, logging, csv, re
 
 app = Flask(__name__)
-app.config['DEBUG'] = True
+app.config['DEBUG'] = False
 
 # Note: We don't need to call run() since our application is embedded within
 # the App Engine WSGI application server.
@@ -66,6 +66,8 @@ def presentOn(student, month, day, year):
     return False
 
 def getStudentsData():
+    if app.config['DEBUG']:
+        return {}
     config = ndb.Key(Settings, 'config').get()
     if not config:
         return "ERROR: You need to specify the CSV file of the Google Spreadsheet with OSIS"
@@ -175,11 +177,12 @@ def index():
             if not validate(request.form['email'], request.form['pass']):
                 return "ERROR: Invalid credentials\n"
             else:
+                # If ID is supplied, update attendance for ID
                 if request.form.has_key('id'):
-		    try:
-			int(request.form['id'])
-		    except ValueError:
-			return "ERROR: ID must be a number\n"
+                    try:
+                        int(request.form['id'])
+                    except ValueError:
+                        return "ERROR: ID must be a number\n"
                     student = ndb.Key(Student, request.form['id']).get()
                     if not student:
                         student = Student(id=request.form['id'])
@@ -190,6 +193,7 @@ def index():
                         student.attendance_dates += [now]
                     student.put()
                     return "SUCCESS: Server received: " + request.form['id'] + "\n"
+                # Otherwise, acknowledge successful sign in
                 else:
                     return "SUCCESS\n"
         else:
@@ -228,6 +232,35 @@ def student():
             return "ERROR: Invalid credentials\n"
         else:
             return getStudent(request.form['id'])
+    else:
+        return "ERROR: Malformed request\n"
+
+@app.route("/delete", methods=['POST'])
+def delete():
+    if request.form.has_key('email') and\
+        request.form.has_key('pass') and\
+        request.form.has_key('month') and\
+        request.form.has_key('day') and\
+        request.form.has_key('year') and\
+        request.form.has_key('id'):
+        if not validate(request.form['email'], request.form['pass']):
+            return "ERROR: Invalid credentials\n"
+        else:
+            try:
+                int(request.form['id'])
+            except ValueError:
+                return "ERROR: ID must be a number\n"
+            student = ndb.Key(Student, request.form['id']).get()
+            if student:
+                date = datetime.date(int(request.form['year']),\
+                                    int(request.form['month']),\
+                                    int(request.form['day']))
+                student.attendance_dates.remove(date)
+                student.put()
+            else:
+                return "ERROR: Student does not exist\n"
+            return "SUCCESS: Deleted date " + printDate(date) + \
+                    " for student " + printID(student) + "\n"
     else:
         return "ERROR: Malformed request\n"
 
