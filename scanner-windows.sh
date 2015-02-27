@@ -30,23 +30,23 @@ RESET="\033[m"
 
 function login() {
     # Read login credentials and validate with server
-    echo -n "Attendance Administrator Email: "
-    read email
-    ADMIN_EMAIL=$email
+    if [[ $ADMIN_EMAIL == "" ]]; then
+        echo -n "Attendance Administrator Email: "
+        read email
+        ADMIN_EMAIL=$email
+    fi
     echo -n "Attendance Administrator Password: "
     read -s pass
     echo ""
-    ADMIN_PASS=$pass
-    response=$(curl -s $SERVER_ADDR -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
+    response=$(curl -s $SERVER_ADDR -d "email=${ADMIN_EMAIL}&pass=${pass}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
-        exit 1
     elif echo $response | grep -E "SUCCESS" > /dev/null; then
         printf "${GREEN}Validation successful${RESET}\n"
+        ADMIN_PASS=$pass
     else
         # Print out error message
         printf "${RED}${response}${RESET}\n"
-        exit 1
     fi
 }
 
@@ -218,7 +218,9 @@ if [[ $# -eq 1 ]]; then
     fi
 fi
 
-login
+while [[ $ADMIN_PASS == "" ]]; do
+    login
+done
 if [[ $# -ge 1 ]]; then
     if [[ $1 == "--dump" || $1 == "-d" ]]; then
         printf "${GREEN}Dumping data...${RESET}\n"
