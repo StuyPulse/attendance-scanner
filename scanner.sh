@@ -12,6 +12,9 @@ OFFLINE=false
 MONTH=$(date +%m)
 DAY=$(date +%d)
 YEAR=$(date +%Y)
+MONTH_OVERRIDE=""
+DAY_OVERRIDE=""
+YEAR_OVERRIDE=""
 # Log of all IDs
 LOG=barcode-${MONTH}-${DAY}-${YEAR}.log
 # Log of pending IDs that failed to send
@@ -69,6 +72,15 @@ function post_data() {
     if $OFFLINE; then
         echo $1 >> $FAILED_LOG
         exit 0
+    fi
+    if [[ $YEAR_OVERRIDE != "" ]]; then
+        YEAR=$YEAR_OVERRIDE
+    fi
+    if [[ $MONTH_OVERRIDE != "" ]]; then
+        MONTH=$MONTH_OVERRIDE
+    fi
+    if [[ $DAY_OVERRIDE != "" ]]; then
+        DAY=$DAY_OVERRIDE
     fi
     response=$(curl -s $SERVER_ADDR -d "id=$1&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
