@@ -12,9 +12,6 @@ OFFLINE=false
 MONTH=$(date +%m)
 DAY=$(date +%d)
 YEAR=$(date +%Y)
-MONTH_OVERRIDE=""
-DAY_OVERRIDE=""
-YEAR_OVERRIDE=""
 # Log of all IDs
 LOG=barcode-${MONTH}-${DAY}-${YEAR}.log
 # Log of pending IDs that failed to send
@@ -72,15 +69,6 @@ function post_data() {
     if $OFFLINE; then
         echo $1 >> $FAILED_LOG
         exit 0
-    fi
-    if [[ $YEAR_OVERRIDE != "" ]]; then
-        YEAR=$YEAR_OVERRIDE
-    fi
-    if [[ $MONTH_OVERRIDE != "" ]]; then
-        MONTH=$MONTH_OVERRIDE
-    fi
-    if [[ $DAY_OVERRIDE != "" ]]; then
-        DAY=$DAY_OVERRIDE
     fi
     response=$(curl -s $SERVER_ADDR -d "id=$1&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
@@ -201,12 +189,17 @@ function drop_data() {
     fi
 }
 
-function main() {
+function scan() {
+    # Update log name if dates were overridden
+    LOG=barcode-${MONTH}-${DAY}-${YEAR}.log
+    printf "${YELLOW}Enter \"back\" to go back to the main menu${RESET}\n"
     while [[ true ]]; do
         show_prompt
         read barcode
-        if [[ ${#barcode} != $VALID_BARCODE_LENGTH ]]; then
-            printf "${RED}ERROR: Invalid barcode${RESET}\n"   
+        if [[ $barcode == "back" ]]; then
+            main
+        elif [[ ${#barcode} != $VALID_BARCODE_LENGTH ]]; then
+            printf "${RED}ERROR: Invalid barcode${RESET}\n"
 	elif echo $barcode | grep "[^0-9]\+" > /dev/null; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"
         else
@@ -220,71 +213,101 @@ function main() {
 }
 
 function help() {
-    echo -e "Usage: ./scanner.sh [-d|--dump|--day|--today|-s|--student|--dropdb]"
-    echo -e " -d, --dump\t\tDump(show) all attendance data"
-    echo -e " --day\t\t\tShow attendance data for a specific day"
-    echo -e " --today\t\tShow attendance data for today"
-    echo -e " -s, --student\t\tShow attendance data for a student"
-    echo -e " -c, --csv\t\tExport data to CSV"
-    echo -e " --delete\t\tDelete attendance for a student on a particular day"
-    echo -e " --dropdb\t\tDrop(delete) all attendance data"
+    echo -e "Usage: ./scanner.sh [--offline|-h|--help]"
+    echo -e " --offline\tTake attendance offline"
+    echo -e " -h --help\tDisplay this message"
+}
+
+function main() {
+    while [[ true ]]; do
+	echo -e "\n1)  Take attendance"
+	echo "2)  Take attendance for a specific day"
+	echo "3)  Dump(show) all attendance data"
+	echo "4)  Show attendance data for a specific day"
+	echo "5)  Show attendance data for today"
+	echo "6)  Show attendance data for a student"
+	echo "7)  Export data to CSV"
+	echo "8)  Delete attendance for a student on a particular day"
+	echo "9)  Drop(delete) all attendance data"
+	echo "10) Upload attendance from a log"
+	echo -e "11) Exit\n"
+	printf "${GREEN}What would you like to do?>${RESET} "
+	read choice
+
+	if [[ $choice == "1" ]]; then
+	    scan
+	elif [[ $choice == "2" ]]; then
+	    echo -n "Which month do you want to scan for? (1-12) "
+	    read month
+	    echo -n "Which day do you want to scan for? (1-31) "
+	    read day
+	    echo -n "Which year do you want to scan for? (####) "
+	    read year
+	    MONTH=$month
+	    DAY=$day
+	    YEAR=$year
+	    scan
+	elif [[ $choice == "3" ]]; then
+	    printf "${GREEN}Dumping data...${RESET}\n"
+	    dump_data
+	elif [[ $choice == "4" ]]; then
+	    echo -n "Which month do you want to see the attendance for? (1-12) "
+	    read month
+	    echo -n "Which day do you want to see the attendance for? (1-31) "
+	    read day
+	    echo -n "Which year do you want to see the attendance for? (####) "
+	    read year
+	    dump_day $month $day $year
+	elif [[ $choice == "5" ]]; then
+	    dump_today
+	elif [[ $choice == "6" ]]; then
+	    echo -n "Please enter the ID for the student: "
+	    read id
+	    dump_student $id
+	elif [[ $choice == "7" ]]; then
+	    dump_csv
+	elif [[ $choice == "8" ]]; then
+	    echo -n "Please enter the ID for the student: "
+	    read id
+	    echo -n "What is the year of the day you want to delete? (####) "
+	    read year
+	    echo -n "What is the month of the day you want to delete? (1-12) "
+	    read month
+	    echo -n "What is the day you want to delete? (1-31) "
+	    read day
+	    delete_date_for_student $month $day $year $id
+	elif [[ $choice == "9" ]]; then
+	    printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
+	    read ans
+	    if [[ $ans == "y" ]]; then
+		printf "${GREEN}Dropping all data...${RESET}\n"
+		drop_data
+	    else
+		echo "Aborting."
+	    fi
+	elif [[ $choice == "10" ]]; then
+	    ls | grep barcode
+	    echo -ne "\nWhich log would you like to upload? "
+	    read log
+	    upload_attendance_from_log $log
+	elif [[ $choice == "11" ]]; then
+	    printf "${RED}Exiting...${RESET}\n"
+	    exit
+	fi
+    done
 }
 
 if [[ $# -eq 1 ]]; then
     if [[ $1 == "--help" || $1 == "-h" ]]; then
-        help
-        exit 0
+	help
+	exit 0
     elif [[ $1 == "--offline" ]]; then
-        OFFLINE=true
-        main
+	OFFLINE=true
+	scan
     fi
 fi
 
 while [[ $ADMIN_PASS == "" ]]; do
     login
 done
-if [[ $# -ge 1 ]]; then
-    if [[ $1 == "--dump" || $1 == "-d" ]]; then
-        printf "${GREEN}Dumping data...${RESET}\n"
-        dump_data
-    elif [[ $1 == "--delete" ]]; then
-        echo -n "Please enter the ID for the student: "
-        read id
-        echo -n "What is the year of the day you want to delete? (####) "
-        read year
-        echo -n "What is the month of the day you want to delete? (1-12) "
-        read month
-        echo -n "What is the day you want to delete? (1-31) "
-        read day
-        delete_date_for_student $month $day $year $id
-    elif [[ $1 == "--dropdb" ]]; then
-        printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
-        read ans
-        if [[ $ans == "y" ]]; then
-            printf "${GREEN}Dropping all data...${RESET}\n"
-            drop_data
-        else
-            echo "Aborting."
-        fi
-    elif [[ $1 == "--day" ]]; then
-        echo -n "Which month do you want to see the attendance for? (1-12) "
-        read month
-        echo -n "Which day do you want to see the attendance for? (1-31) "
-        read day
-        echo -n "Which year do you want to see the attendance for? (####) "
-        read year
-        dump_day $month $day $year
-    elif [[ $1 == "--today" ]]; then
-        dump_today
-    elif [[ $1 == "-c" || $1 == "--csv" ]]; then
-        dump_csv
-    elif [[ $1 == "-s" || $1 == "--student" ]]; then
-        echo -n "Please enter the ID for the student: "
-        read id
-        dump_student $id
-    else
-        help
-    fi
-else
-    main
-fi
+main
