@@ -203,11 +203,19 @@ function scan() {
 	elif echo $barcode | grep "[^0-9]\+" > /dev/null; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"
         else
-            printf "${GREEN}Got barcode: ${barcode}${RESET}\n"
-            # Append barcode to log
-            echo $barcode >> $LOG
-            # Send data to server asynchronously
-            post_data $barcode &
+            if [[ ! -f $LOG ]]; then
+                touch $LOG
+            fi
+            # Only send barcodes that haven't been logged yet
+            if [[ $(grep $barcode $LOG) == "" ]]; then
+                printf "${GREEN}Got barcode: ${barcode}${RESET}\n"
+                # Append barcode to log
+                echo $barcode >> $LOG
+                # Send data to server asynchronously
+                post_data $barcode &
+            else
+                printf "${YELLOW}You already scanned in${RESET}\n"
+            fi
         fi
     done
 }
