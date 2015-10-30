@@ -134,8 +134,8 @@ function dump_data() {
 
 function dump_day() {
     if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3" > $OUTPUT_FILE
-        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3" > $1-$2-$3.log
+        printf "${GREEN}Output saved to file '$1-$2-$3.log'${RESET}\n"
     else
         curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3"
     fi
@@ -146,8 +146,8 @@ function dump_today() {
     day=$(date +%d)
     year=$(date +%Y)
     if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}" > $OUTPUT_FILE
-        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}" > $month-$day-$year.log
+        printf "${GREEN}Output saved to file '$month-$day-$year.log'${RESET}\n"
     else
         curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}"
     fi
@@ -155,19 +155,21 @@ function dump_today() {
 
 function dump_student() {
     if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1" > $OUTPUT_FILE
-        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+        curl $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1" > $1.log
+        printf "${GREEN}Output saved to file '$1.log'${RESET}\n"
     else
         curl $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1"
     fi
 }
 
 function delete_date_for_student() {
-    if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/delete -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3&id=$4" > $OUTPUT_FILE
-        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    response=$(curl -s $SERVER_ADDR/delete -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3&id=$4")
+    if [[ ${#response} == 0 ]]; then
+        printf "${RED}ERROR: Could not contact server${RESET}\n"
+    elif [[ $response =~ "SUCCESS" ]]; then
+        printf "${GREEN}Successfully deleted date${RESET}\n"
     else
-        curl $SERVER_ADDR/delete -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3&id=$4"
+        printf "${RED}${response}${RESET}\n"
     fi
 }
 
@@ -181,11 +183,13 @@ function dump_csv() {
 }
 
 function drop_data() {
-    if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE
-        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    response=$(curl -s $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
+    if [[ ${#response} == 0 ]]; then
+        printf "${RED}ERROR: Could not contact server${RESET}\n"
+    elif [[ $response =~ "Deleted" ]]; then
+        printf "${GREEN}${response}${RESET}\n"
     else
-        curl $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+        printf "${RED}${response}${RESET}\n"
     fi
 }
 
