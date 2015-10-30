@@ -220,6 +220,26 @@ function scan() {
     done
 }
 
+function upload_attendance_from_log() {
+    if [ ! -f $1 ]; then
+        printf "${RED}File not found!${RESET}"
+        exit 1
+    fi
+    DATA=$(echo $1 | cut -d"-" -f1- | cut -d "." -f1)
+    MONTH=$(echo $DATA | cut -d"-" -f2)
+    DAY=$(echo $DATA | cut -d"-" -f3)
+    YEAR=$(echo $DATA | cut -d"-" -f4)
+    while read id; do
+        printf "${MAGENTA}Uploading $id${RESET}\n"
+        response=$(curl -s $SERVER_ADDR -d "id=$id&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
+        if [[ ${#response} != 0 && ! $response =~ "ERROR" ]]; then
+            printf "${GREEN}Done!${RESET}\n"
+        else
+            printf "${RED}Failed to send $id${RESET}\n"
+        fi
+    done < $1
+}
+
 function help() {
     echo -e "Usage: ./scanner.sh [--offline|-h|--help]"
     echo -e " --offline\tTake attendance offline"
@@ -294,7 +314,7 @@ function main() {
 		echo "Aborting."
 	    fi
 	elif [[ $choice == "10" ]]; then
-	    ls | grep barcode
+	    ls | grep log
 	    echo -ne "\nWhich log would you like to upload? "
 	    read log
 	    upload_attendance_from_log $log
