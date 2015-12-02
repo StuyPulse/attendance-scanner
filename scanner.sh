@@ -90,7 +90,7 @@ function post_data() {
         # concurrently
         if [[ ! -f $LOG.lock ]]; then
             num_failed=$(get_num_failed)
-            if [[ $num_failed != "" ]]; then
+            if [[ $num_failed ]]; then
                 touch $LOG.lock
                 printf "\n${MAGENTA}(!) I'm preparing to dump ${num_failed} pending IDs to the server!${RESET}\n"
                 show_prompt
@@ -204,35 +204,34 @@ function scan() {
             main
         elif [[ ${#barcode} != $VALID_BARCODE_LENGTH ]]; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"
-	elif echo $barcode | grep "[^0-9]\+" > /dev/null; then
+        elif echo $barcode | grep "[^0-9]\+" > /dev/null; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"
         else
             if [[ ! -f $LOG ]]; then
                 touch $LOG
             fi
             # Only send barcodes that haven't been logged yet
-            if [[ $(grep $barcode $LOG) == "" ]]; then
+            # -q will only return exit code
+            if grep -q $barcode $LOG; then
+                printf "${YELLOW}You already scanned in${RESET}\n"
+            else
                 printf "${GREEN}Got barcode: ${barcode}${RESET}\n"
                 # Append barcode to log
                 echo $barcode >> $LOG
                 # Send data to server asynchronously
                 post_data $barcode &
-            else
-                printf "${YELLOW}You already scanned in${RESET}\n"
             fi
         fi
     done
 }
 
 function upload_attendance_from_log() {
-    if [ ! -f $1 ]; then
-        printf "${RED}File not found!${RESET}"
-        exit 1
+    if [[ ! -f $1 ]]; then
+        printf "${RED}File not found!${RESET}\n"
+        return
     fi
-    DATA=$(echo $1 | cut -d"-" -f1- | cut -d "." -f1)
-    MONTH=$(echo $DATA | cut -d"-" -f2)
-    DAY=$(echo $DATA | cut -d"-" -f3)
-    YEAR=$(echo $DATA | cut -d"-" -f4)
+    basename=$(basename $1 .log)
+    IFS=- read junk MONTH DAY YEAR <<< $basename
     while read id; do
         printf "${MAGENTA}Uploading $id${RESET}\n"
         response=$(curl -s $SERVER_ADDR -d "id=$id&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
@@ -251,95 +250,95 @@ function help() {
 }
 
 function main() {
-    while [[ true ]]; do
-	echo -e "\n1)  Take attendance"
-	echo "2)  Take attendance for a specific day"
-	echo "3)  Dump(show) all attendance data"
-	echo "4)  Show attendance data for a specific day"
-	echo "5)  Show attendance data for today"
-	echo "6)  Show attendance data for a student"
-	echo "7)  Export data to CSV"
-	echo "8)  Delete attendance for a student on a particular day"
-	echo "9)  Drop(delete) all attendance data"
-	echo "10) Upload attendance from a log"
-	echo -e "11) Exit\n"
-	printf "${GREEN}What would you like to do?>${RESET} "
-	read choice
+    while :; do
+        echo -e "\n1)  Take attendance"
+        echo "2)  Take attendance for a specific day"
+        echo "3)  Dump(show) all attendance data"
+        echo "4)  Show attendance data for a specific day"
+        echo "5)  Show attendance data for today"
+        echo "6)  Show attendance data for a student"
+        echo "7)  Export data to CSV"
+        echo "8)  Delete attendance for a student on a particular day"
+        echo "9)  Drop(delete) all attendance data"
+        echo "10) Upload attendance from a log"
+        echo -e "11) Exit\n"
+        printf "${GREEN}What would you like to do?>${RESET} "
+        read choice
 
-	if [[ $choice == "1" ]]; then
-	    scan
-	elif [[ $choice == "2" ]]; then
-	    echo -n "Which month do you want to scan for? (1-12) "
-	    read month
-	    echo -n "Which day do you want to scan for? (1-31) "
-	    read day
-	    echo -n "Which year do you want to scan for? (####) "
-	    read year
-	    MONTH=$month
-	    DAY=$day
-	    YEAR=$year
-	    scan
-	elif [[ $choice == "3" ]]; then
-	    printf "${GREEN}Dumping data...${RESET}\n"
-	    dump_data
-	elif [[ $choice == "4" ]]; then
-	    echo -n "Which month do you want to see the attendance for? (1-12) "
-	    read month
-	    echo -n "Which day do you want to see the attendance for? (1-31) "
-	    read day
-	    echo -n "Which year do you want to see the attendance for? (####) "
-	    read year
-	    dump_day $month $day $year
-	elif [[ $choice == "5" ]]; then
-	    dump_today
-	elif [[ $choice == "6" ]]; then
-	    echo -n "Please enter the ID for the student: "
-	    read id
-	    dump_student $id
-	elif [[ $choice == "7" ]]; then
-	    dump_csv
-	elif [[ $choice == "8" ]]; then
-	    echo -n "Please enter the ID for the student: "
-	    read id
-	    echo -n "What is the year of the day you want to delete? (####) "
-	    read year
-	    echo -n "What is the month of the day you want to delete? (1-12) "
-	    read month
-	    echo -n "What is the day you want to delete? (1-31) "
-	    read day
-	    delete_date_for_student $month $day $year $id
-	elif [[ $choice == "9" ]]; then
-	    printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
-	    read ans
-	    if [[ $ans == "y" ]]; then
-		printf "${GREEN}Dropping all data...${RESET}\n"
-		drop_data
-	    else
-		echo "Aborting."
-	    fi
-	elif [[ $choice == "10" ]]; then
-	    ls | grep log
-	    echo -ne "\nWhich log would you like to upload? "
-	    read log
-	    upload_attendance_from_log $log
-	elif [[ $choice == "11" ]]; then
-	    printf "${RED}Exiting...${RESET}\n"
-	    exit
-	fi
+        if [[ $choice == "1" ]]; then
+            scan
+        elif [[ $choice == "2" ]]; then
+            echo -n "Which month do you want to scan for? (1-12) "
+            read month
+            echo -n "Which day do you want to scan for? (1-31) "
+            read day
+            echo -n "Which year do you want to scan for? (####) "
+            read year
+            MONTH=$month
+            DAY=$day
+            YEAR=$year
+            scan
+        elif [[ $choice == "3" ]]; then
+            printf "${GREEN}Dumping data...${RESET}\n"
+            dump_data
+        elif [[ $choice == "4" ]]; then
+            echo -n "Which month do you want to see the attendance for? (1-12) "
+            read month
+            echo -n "Which day do you want to see the attendance for? (1-31) "
+            read day
+            echo -n "Which year do you want to see the attendance for? (####) "
+            read year
+            dump_day $month $day $year
+        elif [[ $choice == "5" ]]; then
+            dump_today
+        elif [[ $choice == "6" ]]; then
+            echo -n "Please enter the ID for the student: "
+            read id
+            dump_student $id
+        elif [[ $choice == "7" ]]; then
+            dump_csv
+        elif [[ $choice == "8" ]]; then
+            echo -n "Please enter the ID for the student: "
+            read id
+            echo -n "What is the year of the day you want to delete? (####) "
+            read year
+            echo -n "What is the month of the day you want to delete? (1-12) "
+            read month
+            echo -n "What is the day you want to delete? (1-31) "
+            read day
+            delete_date_for_student $month $day $year $id
+        elif [[ $choice == "9" ]]; then
+            printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
+            read ans
+            if [[ $ans == "y" ]]; then
+            printf "${GREEN}Dropping all data...${RESET}\n"
+            drop_data
+            else
+            echo "Aborting."
+            fi
+        elif [[ $choice == "10" ]]; then
+            ls | grep log
+            echo -ne "\nWhich log would you like to upload? "
+            read log
+            upload_attendance_from_log $log
+        elif [[ $choice == "11" ]]; then
+            printf "${RED}Exiting...${RESET}\n"
+            exit
+        fi
     done
 }
 
 if [[ $# -eq 1 ]]; then
     if [[ $1 == "--help" || $1 == "-h" ]]; then
-	help
-	exit 0
+        help
+        exit 0
     elif [[ $1 == "--offline" ]]; then
-	OFFLINE=true
-	scan
+        OFFLINE=true
+        scan
     fi
 fi
 
-while [[ $ADMIN_PASS == "" ]]; do
+while [[ ! $ADMIN_PASS ]]; do
     login
 done
 main
