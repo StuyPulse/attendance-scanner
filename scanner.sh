@@ -12,8 +12,10 @@ OFFLINE=false
 MONTH=$(date +%m)
 DAY=$(date +%d)
 YEAR=$(date +%Y)
+# Directory where all logs are stored
+LOG_DIR="logs"
 # Log of all IDs
-LOG=barcode-${MONTH}-${DAY}-${YEAR}.log
+LOG=$LOG_DIR/barcode-${MONTH}-${DAY}-${YEAR}.log
 # Log of pending IDs that failed to send
 FAILED_LOG=$LOG.FAILED
 
@@ -27,6 +29,11 @@ GREEN="\033[1;32m"
 YELLOW="\033[1;33m"
 MAGENTA="\033[1;35m"
 RESET="\033[m"
+
+# Create log directory if it doesn't exist
+if [ ! -d $LOG_DIR ]; then
+    mkdir -p $LOG_DIR
+fi
 
 function login() {
     # Read login credentials and validate with server
@@ -195,7 +202,7 @@ function drop_data() {
 
 function scan() {
     # Update log name if dates were overridden
-    LOG=barcode-${MONTH}-${DAY}-${YEAR}.log
+    LOG=$LOG_DIR/barcode-${MONTH}-${DAY}-${YEAR}.log
     printf "${YELLOW}Enter \"back\" to go back to the main menu${RESET}\n"
     while [[ true ]]; do
         show_prompt
@@ -311,13 +318,13 @@ function main() {
             printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
             read ans
             if [[ $ans == "y" ]]; then
-            printf "${GREEN}Dropping all data...${RESET}\n"
-            drop_data
+                printf "${GREEN}Dropping all data...${RESET}\n"
+                drop_data
             else
-            echo "Aborting."
+                echo "${RED}Aborting.${RESET}\n"
             fi
         elif [[ $choice == "10" ]]; then
-            ls | grep log
+            find $LOG_DIR -name "*.log"
             echo -ne "\nWhich log would you like to upload? "
             read log
             upload_attendance_from_log $log
