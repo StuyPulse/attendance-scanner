@@ -258,7 +258,7 @@ function help() {
 
 function main() {
     while :; do
-        echo -e "\n1)  Take attendance"
+        echo -e "\n1)  Take attendance for today"
         echo "2)  Take attendance for a specific day"
         echo "3)  Dump(show) all attendance data"
         echo "4)  Show attendance data for a specific day"
@@ -273,6 +273,10 @@ function main() {
         read choice
 
         if [[ $choice == "1" ]]; then
+            # Override dates with current date
+            MONTH=$(date +%m)
+            DAY=$(date +%d)
+            YEAR=$(date +%Y)
             scan
         elif [[ $choice == "2" ]]; then
             echo -n "Which month do you want to scan for? (1-12) "
