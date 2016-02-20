@@ -203,6 +203,7 @@ function drop_data() {
 function scan() {
     # Update log name if dates were overridden
     LOG=$LOG_DIR/barcode-${MONTH}-${DAY}-${YEAR}.log
+    FAILED_LOG=$LOG.FAILED
     printf "${YELLOW}Enter \"back\" to go back to the main menu${RESET}\n"
     while [[ true ]]; do
         show_prompt
