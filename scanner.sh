@@ -105,15 +105,13 @@ function post_data() {
                 # server
                 while read line; do
                     response=$(curl -s $SERVER_ADDR -d "id=$line&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
-                    # If still unsuccessful, append to a new log
-                    if [[ ${#response} == 0 || $response =~ "ERROR" ]]; then
-                        echo $line >> $FAILED_LOG.new
+                    # If successful, remove from list of failed logs
+                    if [[ $response =~ "SUCCESS" ]]; then
+                        sed -i "/$line/d" $FAILED_LOG
                     fi
                 done < $FAILED_LOG
-                # Update log of IDs that failed to send
-                if [[ -f $FAILED_LOG.new ]]; then
-                    mv $FAILED_LOG.new $FAILED_LOG
-                else
+                # If failed log is empty, remove it
+                if [[ ! -s $FAILED_LOG ]]; then
                     rm $FAILED_LOG
                 fi
                 rm $LOG.lock
@@ -210,7 +208,7 @@ function scan() {
         read barcode
         if [[ $barcode == "back" ]]; then
             main
-        elif echo $barcode | grep -v "[0-9]\{9\}" > /dev/null; then
+        elif echo $barcode | grep -v "^[0-9]\{9\}$" > /dev/null; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"
         else
             if [[ ! -f $LOG ]]; then
