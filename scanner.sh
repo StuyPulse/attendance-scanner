@@ -210,9 +210,7 @@ function scan() {
         read barcode
         if [[ $barcode == "back" ]]; then
             main
-        elif [[ ${#barcode} != $VALID_BARCODE_LENGTH ]]; then
-            printf "${RED}ERROR: Invalid barcode${RESET}\n"
-        elif echo $barcode | grep "[^0-9]\+" > /dev/null; then
+        elif echo $barcode | grep -v "[0-9]\{9\}" > /dev/null; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"
         else
             if [[ ! -f $LOG ]]; then
