@@ -35,6 +35,18 @@ if [ ! -d $LOG_DIR ]; then
     mkdir -p $LOG_DIR
 fi
 
+# Remind the user of any failed IDs upon exiting
+trap remind_failed_ids SIGINT
+
+# Remind the user of any failed IDs
+function remind_failed_ids() {
+    failed_logs=$(find $LOG_DIR -name "*.FAILED")
+    if [[ $failed_logs != "" ]]; then
+        printf "\n${RED}(!) The following logs have ids that have failed to send to the server:${RESET}\n"
+        echo $failed_logs
+    fi
+}
+
 function login() {
     # Read login credentials and validate with server
     if [[ $ADMIN_EMAIL == "" ]]; then
@@ -347,6 +359,7 @@ function help() {
 }
 
 function main() {
+    remind_failed_ids
     while :; do
         echo -e "\n1)  Take attendance for today"
         echo "2)  Take attendance for a specific day"
@@ -429,6 +442,7 @@ function main() {
             format_attendance $month
         elif [[ $choice == "12" ]]; then
             printf "${RED}Exiting...${RESET}\n"
+            remind_failed_ids
             exit
         fi
     done
