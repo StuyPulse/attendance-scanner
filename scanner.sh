@@ -52,7 +52,6 @@ function login() {
         printf "${GREEN}Validation successful${RESET}\n"
         ADMIN_PASS=$pass
     else
-        # Print out error message
         printf "${RED}${response}${RESET}\n"
     fi
 }
@@ -99,13 +98,13 @@ function post_data() {
             num_failed=$(get_num_failed)
             if [[ $num_failed ]]; then
                 touch $LOG.lock
-                printf "\n${MAGENTA}(!) I'm preparing to dump ${num_failed} pending IDs to the server!${RESET}\n"
+                printf "\n${MAGENTA}(!) Preparing to dump ${num_failed} pending IDs to the server!${RESET}\n"
                 show_prompt
                 # Iterate through each failed ID and try to send it to the
                 # server
                 while read line; do
                     response=$(curl -s $SERVER_ADDR -d "id=$line&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
-                    # If successful, remove from list of failed logs
+                    # If successful, remove from list of failed IDs
                     if [[ $response =~ "SUCCESS" ]]; then
                         sed -i "/$line/d" $FAILED_LOG
                     fi
@@ -296,9 +295,10 @@ function format_attendance() {
 
     if [[ ! $(command -v csv2ods) ]]; then
         printf "${YELLOW}csv2ods not detected. Attempting installation...${RESET}\n"
-        sudo apt-get install python-odf-tools
+        sudo apt-get install python-odf
         if [[ ! $(command -v csv2ods) ]]; then
             printf "${RED}csv2ods still not detected! Aborting!${RESET}\n"
+            return
         fi
     fi
     printf "${YELLOW}Converting from csv to ods...${RESET}\n"
@@ -310,7 +310,7 @@ function format_attendance() {
     if [[ $ans =~ ^[Yy]$ ]]; then
         echo -n "Your Email: "
         read email
-        printf "${YELLOW}If you have 2 factor auth enabled, you need to generate an app specific password.\n"
+        printf "${YELLOW}If you have 2 factor authentication enabled, you need to generate an app specific password.\n"
         printf "You can do so over at https://security.google.com/settings/security/apppasswords?pli=1 (assuming you use gmail)${RESET}\n"
         echo -n "Password: "
         read password
@@ -328,6 +328,7 @@ function mail_attendance() {
         sudo apt-get install topal
         if [[ ! $(command -v mime-tool) ]]; then
             printf "${RED}mime-tool still not detected! Aborting!${RESET}\n"
+            return
         fi
     fi
 
@@ -401,9 +402,9 @@ function main() {
         elif [[ $choice == "8" ]]; then
             echo -n "Please enter the ID for the student: "
             read id
-            echo -n "What is the year of the day you want to delete? (####) "
+            echo -n "What is the year you want to delete? (####) "
             read year
-            echo -n "What is the month of the day you want to delete? (1-12) "
+            echo -n "What is the month you want to delete? (1-12) "
             read month
             echo -n "What is the day you want to delete? (1-31) "
             read day
@@ -434,12 +435,12 @@ function main() {
 }
 
 if [[ $# -eq 1 ]]; then
-    if [[ $1 == "--help" || $1 == "-h" ]]; then
-        help
-        exit 0
-    elif [[ $1 == "--offline" ]]; then
+    if [[ $1 == "--offline" ]]; then
         OFFLINE=true
         scan
+    else
+        help
+        exit 0
     fi
 fi
 
