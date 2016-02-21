@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Configuration
-VALID_BARCODE_LENGTH=9
 SERVER_ADDR=https://stuypulse-attendance.appspot.com/
 SHOW_SERVER_RESPONSE_IF_SUCCESS=false
 SAVE_DUMP_OUTPUT=true
@@ -36,14 +35,14 @@ if [ ! -d $LOG_DIR ]; then
 fi
 
 # Remind the user of any failed IDs upon exiting
-trap remind_failed_ids SIGINT
+trap "remind_failed_ids; exit 1" SIGINT
 
 # Remind the user of any failed IDs
 function remind_failed_ids() {
     failed_logs=$(find $LOG_DIR -name "*.FAILED")
     if [[ $failed_logs != "" ]]; then
         printf "\n${RED}(!) The following logs have ids that have failed to send to the server:${RESET}\n"
-        echo $failed_logs
+        echo "$failed_logs"
     fi
 }
 
@@ -363,6 +362,9 @@ function main() {
     while :; do
         echo -e "\n1)  Take attendance for today"
         echo "2)  Take attendance for a specific day"
+        if $OFFLINE; then
+            printf "${RED}"
+        fi
         echo "3)  Dump(show) all attendance data"
         echo "4)  Show attendance data for a specific day"
         echo "5)  Show attendance data for today"
@@ -372,10 +374,16 @@ function main() {
         echo "9)  Drop(delete) all attendance data"
         echo "10) Upload attendance from a log"
         echo "11) Format attendance for a specific month (and option to email it)"
+        printf "${RESET}"
         echo -e "12) Exit\n"
         printf "${GREEN}What would you like to do?>${RESET} "
         read choice
 
+        if [[ $choice == "12" ]]; then
+            printf "${RED}Exiting...${RESET}\n"
+            remind_failed_ids
+            exit
+        fi
         if [[ $choice == "1" ]]; then
             # Override dates with current date
             MONTH=$(date +%m)
@@ -393,6 +401,14 @@ function main() {
             DAY=$day
             YEAR=$year
             scan
+        elif [[ $OFFLINE ]]; then
+            echo "You are currently in offline mode. Available actions are:"
+            echo ""
+            echo "1)  Take attendance for today"
+            echo "2)  Take attendance for a specific day"
+            echo "12) Exit"
+            echo ""
+            echo "For more functionality, re-run the script while connected to the internet"
         elif [[ $choice == "3" ]]; then
             printf "${GREEN}Dumping data...${RESET}\n"
             dump_data
@@ -440,10 +456,6 @@ function main() {
             echo -n "Month to format? (1-12) "
             read month
             format_attendance $month
-        elif [[ $choice == "12" ]]; then
-            printf "${RED}Exiting...${RESET}\n"
-            remind_failed_ids
-            exit
         fi
     done
 }
@@ -451,14 +463,17 @@ function main() {
 if [[ $# -eq 1 ]]; then
     if [[ $1 == "--offline" ]]; then
         OFFLINE=true
-        scan
     else
         help
         exit 0
     fi
 fi
 
-while [[ ! $ADMIN_PASS ]]; do
-    login
-done
+if ! $OFFLINE; then
+    while [[ ! $ADMIN_PASS ]]; do
+        login
+    done
+else
+    printf "${YELLOW}Running in offline mode${RESET}\n"
+fi
 main
