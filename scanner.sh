@@ -139,20 +139,34 @@ function get_num_failed() {
 }
 
 function dump_data() {
-    if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE
-        printf "${GREEN}Output saved to file '${OUTPUT_FILE}'${RESET}\n"
+    response=$(curl -s $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
+    if [[ $? != 0 ]]; then
+        printf "${RED}ERROR: Could not contact server${RESET}\n"
+    elif [[ $response =~ "ERROR" ]]; then
+        printf "${RED}${response}${RESET}\n"
     else
-        curl $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+        if $SAVE_DUMP_OUTPUT; then
+            printf "${GREEN}Output saved to file '$OUTPUT_FILE'${RESET}\n"
+            echo "$response" > "$OUTPUT_FILE"
+        else
+            echo "$response"
+        fi
     fi
 }
 
 function dump_day() {
-    if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3" > $1-$2-$3.log
-        printf "${GREEN}Output saved to file '$1-$2-$3.log'${RESET}\n"
+    response=$(curl -s $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3")
+    if [[ $? != 0 ]]; then
+        printf "${RED}ERROR: Could not contact server${RESET}\n"
+    elif [[ $response =~ "ERROR" ]]; then
+        printf "${RED}${response}${RESET}\n"
     else
-        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3"
+        if $SAVE_DUMP_OUTPUT; then
+            printf "${GREEN}Output saved to file '$1-$2-$3.log'${RESET}\n"
+            echo "$response" > "$1-$2-$3.log"
+        else
+            echo "$response"
+        fi
     fi
 }
 
@@ -160,20 +174,22 @@ function dump_today() {
     month=$(date +%m)
     day=$(date +%d)
     year=$(date +%Y)
-    if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}" > $month-$day-$year.log
-        printf "${GREEN}Output saved to file '$month-$day-$year.log'${RESET}\n"
-    else
-        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${month}&day=${day}&year=${year}"
-    fi
+    dump_day $month $day $year
 }
 
 function dump_student() {
-    if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1" > $1.log
-        printf "${GREEN}Output saved to file '$1.log'${RESET}\n"
+    response=$(curl -s $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1")
+    if [[ $? != 0 ]]; then
+        printf "${RED}ERROR: Could not contact server${RESET}\n"
+    elif [[ $response =~ "ERROR" ]]; then
+        printf "${RED}${response}${RESET}\n"
     else
-        curl $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1"
+        if $SAVE_DUMP_OUTPUT; then
+            printf "${GREEN}Output saved to file '$1.log'${RESET}\n"
+            echo "$response" > "$1.log"
+        else
+            echo "$response"
+        fi
     fi
 }
 
@@ -189,11 +205,18 @@ function delete_date_for_student() {
 }
 
 function dump_csv() {
-    if $SAVE_DUMP_OUTPUT; then
-        curl $SERVER_ADDR/csv -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}" > $OUTPUT_FILE.csv
-        printf "${GREEN}Output saved to file '${OUTPUT_FILE}.csv'${RESET}\n"
+    response=$(curl -s $SERVER_ADDR/csv -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
+    if [[ $? != 0 ]]; then
+        printf "${RED}ERROR: Could not contact server${RESET}\n"
+    elif [[ $response =~ "ERROR" ]]; then
+        printf "${RED}${response}${RESET}\n"
     else
-        curl $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}"
+        if $SAVE_DUMP_OUTPUT; then
+            printf "${GREEN}Output saved to file '$OUTPUT_FILE.csv'${RESET}\n"
+            echo "$response" > "$OUTPUT_FILE.csv"
+        else
+            echo "$response"
+        fi
     fi
 }
 
@@ -401,7 +424,7 @@ function main() {
             DAY=$day
             YEAR=$year
             scan
-        elif [[ $OFFLINE ]]; then
+        elif $OFFLINE; then
             echo "You are currently in offline mode. Available actions are:"
             echo ""
             echo "1)  Take attendance for today"
