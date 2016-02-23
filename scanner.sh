@@ -59,7 +59,7 @@ function login() {
     response=$(curl -s $SERVER_ADDR -d "email=${ADMIN_EMAIL}&pass=${pass}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
-    elif [[ $response =~ "SUCCESS" ]]; then
+    elif [[ $response =~ SUCCESS ]]; then
         printf "${GREEN}Validation successful${RESET}\n"
         ADMIN_PASS=$pass
     else
@@ -84,16 +84,16 @@ function post_data() {
     fi
     # If we're in offline mode, then append the IDs to the log of pending IDs
     if $OFFLINE; then
-        echo $1 >> $FAILED_LOG
+        echo "$1" >> "$FAILED_LOG"
         exit 0
     fi
     response=$(curl -s $SERVER_ADDR -d "id=$1&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
         # Log any IDs that failed to send to the server
         printf "\n${RED}ERROR: Could not contact server${RESET}\n"
-        echo $1 >> $FAILED_LOG
+        echo "$1" >> "$FAILED_LOG"
         show_prompt
-    elif [[ $response =~ "ERROR" ]]; then
+    elif [[ $response =~ ERROR ]]; then
         printf "\n${RED}${response}${RESET}\n"
         show_prompt
     else
@@ -108,7 +108,7 @@ function post_data() {
         if [[ ! -f $LOG.lock ]]; then
             num_failed=$(get_num_failed)
             if [[ $num_failed ]]; then
-                touch $LOG.lock
+                touch "$LOG.lock"
                 printf "\n${MAGENTA}(!) Preparing to dump ${num_failed} pending IDs to the server!${RESET}\n"
                 show_prompt
                 # Iterate through each failed ID and try to send it to the
@@ -116,15 +116,16 @@ function post_data() {
                 while read line; do
                     response=$(curl -s $SERVER_ADDR -d "id=$line&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
                     # If successful, remove from list of failed IDs
-                    if [[ $response =~ "SUCCESS" ]]; then
-                        sed -i "/$line/d" $FAILED_LOG
+                    if [[ $response =~ SUCCESS ]]; then
+                        sed -i "/$line/d" "$FAILED_LOG"
+                        echo "$line" >> "$LOG"
                     fi
-                done < $FAILED_LOG
+                done < "$FAILED_LOG"
                 # If failed log is empty, remove it
                 if [[ ! -s $FAILED_LOG ]]; then
-                    rm $FAILED_LOG
+                    rm "$FAILED_LOG"
                 fi
-                rm $LOG.lock
+                rm "$LOG.lock"
             fi
         fi
     fi
@@ -134,7 +135,7 @@ function post_data() {
 function get_num_failed() {
     # Print the number of pending IDs that failed to send
     if [[ -f $FAILED_LOG ]]; then
-        echo "$(cat $FAILED_LOG | wc -l)"
+        wc -l < "$FAILED_LOG"
     fi
 }
 
@@ -142,7 +143,7 @@ function dump_data() {
     response=$(curl -s $SERVER_ADDR/dump -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
     if [[ $? != 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
-    elif [[ $response =~ "ERROR" ]]; then
+    elif [[ $response =~ ERROR ]]; then
         printf "${RED}${response}${RESET}\n"
     else
         if $SAVE_DUMP_OUTPUT; then
@@ -158,7 +159,7 @@ function dump_day() {
     response=$(curl -s $SERVER_ADDR/day -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3")
     if [[ $? != 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
-    elif [[ $response =~ "ERROR" ]]; then
+    elif [[ $response =~ ERROR ]]; then
         printf "${RED}${response}${RESET}\n"
     else
         if $SAVE_DUMP_OUTPUT; then
@@ -174,14 +175,14 @@ function dump_today() {
     month=$(date +%m)
     day=$(date +%d)
     year=$(date +%Y)
-    dump_day $month $day $year
+    dump_day "$month" "$day" "$year"
 }
 
 function dump_student() {
     response=$(curl -s $SERVER_ADDR/student -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1")
     if [[ $? != 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
-    elif [[ $response =~ "ERROR" ]]; then
+    elif [[ $response =~ ERROR ]]; then
         printf "${RED}${response}${RESET}\n"
     else
         if $SAVE_DUMP_OUTPUT; then
@@ -197,7 +198,7 @@ function delete_date_for_student() {
     response=$(curl -s $SERVER_ADDR/delete -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=$1&day=$2&year=$3&id=$4")
     if [[ ${#response} == 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
-    elif [[ $response =~ "SUCCESS" ]]; then
+    elif [[ $response =~ SUCCESS ]]; then
         printf "${GREEN}Successfully deleted date${RESET}\n"
     else
         printf "${RED}${response}${RESET}\n"
@@ -208,7 +209,7 @@ function dump_csv() {
     response=$(curl -s $SERVER_ADDR/csv -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
     if [[ $? != 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
-    elif [[ $response =~ "ERROR" ]]; then
+    elif [[ $response =~ ERROR ]]; then
         printf "${RED}${response}${RESET}\n"
     else
         if $SAVE_DUMP_OUTPUT; then
@@ -224,7 +225,7 @@ function drop_data() {
     response=$(curl -s $SERVER_ADDR/dropdb -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
     if [[ ${#response} == 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
-    elif [[ $response =~ "Deleted" ]]; then
+    elif [[ $response =~ Deleted ]]; then
         printf "${GREEN}${response}${RESET}\n"
     else
         printf "${RED}${response}${RESET}\n"
@@ -241,22 +242,22 @@ function scan() {
         read barcode
         if [[ $barcode == "back" ]]; then
             main
-        elif echo $barcode | grep -v "^[0-9]\{9\}$" > /dev/null; then
+        elif echo "$barcode" | grep -v "^[0-9]\{9\}$" > /dev/null; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"
         else
             if [[ ! -f $LOG ]]; then
-                touch $LOG
+                touch "$LOG"
             fi
             # Only send barcodes that haven't been logged yet
             # -q will only return exit code
-            if grep -q $barcode $LOG; then
+            if grep -q "$barcode" "$LOG"; then
                 printf "${YELLOW}You already scanned in${RESET}\n"
             else
                 printf "${GREEN}Got barcode: ${barcode}${RESET}\n"
                 # Append barcode to log
-                echo $barcode >> $LOG
+                echo "$barcode" >> "$LOG"
                 # Send data to server asynchronously
-                post_data $barcode &
+                post_data "$barcode" &
             fi
         fi
     done
@@ -267,17 +268,17 @@ function upload_attendance_from_log() {
         printf "${RED}File not found!${RESET}\n"
         return
     fi
-    basename=$(basename $1 .log)
-    IFS=- read junk MONTH DAY YEAR <<< $basename
+    basename=$(basename "$1" .log)
+    IFS=- read junk MONTH DAY YEAR <<< "$basename"
     while read id; do
         printf "${MAGENTA}Uploading $id${RESET}\n"
         response=$(curl -s $SERVER_ADDR -d "id=$id&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
-        if [[ ${#response} != 0 && ! $response =~ "ERROR" ]]; then
+        if [[ ${#response} != 0 && ! $response =~ ERROR ]]; then
             printf "${GREEN}Done!${RESET}\n"
         else
             printf "${RED}Failed to send $id${RESET}\n"
         fi
-    done < $1
+    done < "$1"
 }
 
 # Format attendance by removing dates we don't want, and converting csv to ods
@@ -320,7 +321,7 @@ function format_attendance() {
         printf "${RED}No data for that month.${RESET}\n"
         return
     fi
-    cat OUT.csv | cut -d, -f-2,$first-$last > "$file"
+    cut -d, -f-2,$first-$last < $OUTPUT_FILE.csv > "$file"
 
     # Remove junk id's, including ones not linked to any names on Team Manager
     sed -i -e "/[0-9]\{9\},,/d" "$file"
@@ -371,7 +372,7 @@ function mail_attendance() {
     echo "Subject: Attendance for $date" >> message.txt
     mime-tool "$date-Attendance.ods" >> message.txt
     curl "smtps://smtp.gmail.com:465" --user "$2:$3" --mail-from "$2" --mail-rcpt "$5" --ssl --upload-file message.txt
-    rm message.txt $date-Attendance.csv $OUTPUT_FILE.csv
+    rm message.txt "$date-Attendance.csv" "$OUTPUT_FILE.csv"
 }
 
 function help() {
@@ -442,13 +443,13 @@ function main() {
             read day
             echo -n "Which year do you want to see the attendance for? (####) "
             read year
-            dump_day $month $day $year
+            dump_day "$month" "$day" "$year"
         elif [[ $choice == "5" ]]; then
             dump_today
         elif [[ $choice == "6" ]]; then
             echo -n "Please enter the ID for the student: "
             read id
-            dump_student $id
+            dump_student "$id"
         elif [[ $choice == "7" ]]; then
             dump_csv
         elif [[ $choice == "8" ]]; then
@@ -460,7 +461,7 @@ function main() {
             read month
             echo -n "What is the day you want to delete? (1-31) "
             read day
-            delete_date_for_student $month $day $year $id
+            delete_date_for_student "$month" "$day" "$year" "$id"
         elif [[ $choice == "9" ]]; then
             printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
             read ans
@@ -468,17 +469,17 @@ function main() {
                 printf "${GREEN}Dropping all data...${RESET}\n"
                 drop_data
             else
-                echo "${RED}Aborting.${RESET}\n"
+                printf "${RED}Aborting.${RESET}\n"
             fi
         elif [[ $choice == "10" ]]; then
             find $LOG_DIR -name "*.log"
             echo -ne "\nWhich log would you like to upload? "
             read log
-            upload_attendance_from_log $log
+            upload_attendance_from_log "$log"
         elif [[ $choice == "11" ]]; then
             echo -n "Month to format? (1-12) "
             read month
-            format_attendance $month
+            format_attendance "$month"
         fi
     done
 }
