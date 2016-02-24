@@ -421,8 +421,8 @@ function main() {
             read day
             echo -n "Which year do you want to scan for? (####) "
             read year
-            MONTH=$month
-            DAY=$day
+            MONTH=$(printf "%02d" $month)
+            DAY=$(printf "%02d" $day)
             YEAR=$year
             scan
         elif $OFFLINE; then
@@ -443,6 +443,8 @@ function main() {
             read day
             echo -n "Which year do you want to see the attendance for? (####) "
             read year
+            month=$(printf "%02d" $month)
+            day=$(printf "%02d" $day)
             dump_day "$month" "$day" "$year"
         elif [[ $choice == "5" ]]; then
             dump_today
