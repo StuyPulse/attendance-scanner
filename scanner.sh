@@ -375,6 +375,17 @@ function mail_attendance() {
     rm message.txt "$date-Attendance.csv" "$OUTPUT_FILE.csv"
 }
 
+function get_attendance_percentage() {
+    dump_csv
+    num_meetings=$(head -1 "$OUTPUT_FILE.csv" | sed "s/[^,]//g" | wc -c)
+    # Account for ID and Name taking up two columns
+    (( num_meetings=num_meetings - 2 ))
+    num_attended=$(grep "$1" "$OUTPUT_FILE.csv" | cut -d"," -f3- | grep -o "X" | wc -l)
+    percent_attended=$(bc -l <<< "$num_attended/$num_meetings*100")
+    echo "Student $1 has attended $num_attended out of $num_meetings (or $percent_attended% of meetings)"
+    rm "$OUTPUT_FILE.csv"
+}
+
 function help() {
     echo -e "Usage: ./scanner.sh [--offline|-h|--help]"
     echo -e " --offline\tTake attendance offline"
@@ -398,12 +409,13 @@ function main() {
         echo "9)  Drop(delete) all attendance data"
         echo "10) Upload attendance from a log"
         echo "11) Format attendance for a specific month (and option to email it)"
+        echo "12) Get percentage of meetings attended for by a student"
         printf "${RESET}"
-        echo -e "12) Exit\n"
+        echo -e "13) Exit\n"
         printf "${GREEN}What would you like to do?>${RESET} "
         read choice
 
-        if [[ $choice == "12" ]]; then
+        if [[ $choice == "13" ]]; then
             printf "${RED}Exiting...${RESET}\n"
             remind_failed_ids
             exit
@@ -430,7 +442,7 @@ function main() {
             echo ""
             echo "1)  Take attendance for today"
             echo "2)  Take attendance for a specific day"
-            echo "12) Exit"
+            echo "13) Exit"
             echo ""
             echo "For more functionality, re-run the script while connected to the internet"
         elif [[ $choice == "3" ]]; then
@@ -482,6 +494,10 @@ function main() {
             echo -n "Month to format? (1-12) "
             read month
             format_attendance "$month"
+        elif [[ $choice == "12" ]]; then
+            echo -n "Please enter the ID for the student: "
+            read id
+            get_attendance_percentage "$id"
         fi
     done
 }
