@@ -35,7 +35,7 @@ if [ ! -d $LOG_DIR ]; then
 fi
 
 # Remind the user of any failed IDs upon exiting
-trap "remind_failed_ids; exit 1" SIGINT
+trap "remind_failed_ids; exit" EXIT
 
 # Remind the user of any failed IDs
 function remind_failed_ids() {
@@ -443,7 +443,6 @@ function main() {
 
         if [[ $choice == "14" ]]; then
             printf "${RED}Exiting...${RESET}\n"
-            remind_failed_ids
             exit
         fi
         if [[ $choice == "1" ]]; then
