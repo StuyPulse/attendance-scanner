@@ -386,6 +386,31 @@ function get_attendance_percentage() {
     rm "$OUTPUT_FILE.csv"
 }
 
+function dump_logs() {
+    # Backup current logs
+    rm -rf "$LOG_DIR.bkp" && cp -rf "$LOG_DIR" "$LOG_DIR.bkp"
+
+    dump_csv
+
+    # Temporarily disable dump saving so we can manually output to a desired file
+    SAVE_DUMP_OUTPUT=false
+    IFS=',' read -r -a dates <<< "$(head -1 "OUT.csv")"
+
+    # Start at two to account for first and second columns being ID and Name
+    for ((i=2; i < ${#dates[@]}; i++)); do
+        IFS="/" read month day year <<< "${dates[$i]}"
+
+        # Add padding zeroes for consistent log names
+        day=$(printf "%02d" "$day")
+        month=$(printf "%02d" "$month")
+
+        echo -ne "\e[0K\rDownloading log $(( i-1 )) of $(( ${#split[@]}-2 ))..."
+        sed "s/ID: //g" <(dump_day "$month" "$day" "$year") > "$LOG_DIR/barcode-${month}-${day}-${year}.log"
+    done
+    printf "\n${GREEN}Done!${RESET}\n"
+    SAVE_DUMP_OUTPUT=true
+}
+
 function help() {
     echo -e "Usage: ./scanner.sh [--offline|-h|--help]"
     echo -e " --offline\tTake attendance offline"
@@ -410,12 +435,13 @@ function main() {
         echo "10) Upload attendance from a log"
         echo "11) Format attendance for a specific month (and option to email it)"
         echo "12) Get percentage of meetings attended for by a student"
+        echo "13) Sync logs from server"
         printf "${RESET}"
-        echo -e "13) Exit\n"
+        echo -e "14) Exit\n"
         printf "${GREEN}What would you like to do?>${RESET} "
         read choice
 
-        if [[ $choice == "13" ]]; then
+        if [[ $choice == "14" ]]; then
             printf "${RED}Exiting...${RESET}\n"
             remind_failed_ids
             exit
@@ -433,8 +459,8 @@ function main() {
             read day
             echo -n "Which year do you want to scan for? (####) "
             read year
-            MONTH=$(printf "%02d" $month)
-            DAY=$(printf "%02d" $day)
+            MONTH=$(printf "%02d" "$month")
+            DAY=$(printf "%02d" "$day")
             YEAR=$year
             scan
         elif $OFFLINE; then
@@ -442,7 +468,7 @@ function main() {
             echo ""
             echo "1)  Take attendance for today"
             echo "2)  Take attendance for a specific day"
-            echo "13) Exit"
+            echo "14) Exit"
             echo ""
             echo "For more functionality, re-run the script while connected to the internet"
         elif [[ $choice == "3" ]]; then
@@ -455,8 +481,8 @@ function main() {
             read day
             echo -n "Which year do you want to see the attendance for? (####) "
             read year
-            month=$(printf "%02d" $month)
-            day=$(printf "%02d" $day)
+            month=$(printf "%02d" "$month")
+            day=$(printf "%02d" "$day")
             dump_day "$month" "$day" "$year"
         elif [[ $choice == "5" ]]; then
             dump_today
@@ -498,6 +524,8 @@ function main() {
             echo -n "Please enter the ID for the student: "
             read id
             get_attendance_percentage "$id"
+        elif [[ $choice == "13" ]]; then
+            dump_logs
         fi
     done
 }
