@@ -48,11 +48,8 @@ function remind_failed_ids() {
 
 function login() {
     # Read login credentials and validate with server
-    if [[ $ADMIN_EMAIL == "" ]]; then
-        echo -n "Attendance Administrator Email: "
-        read email
-        ADMIN_EMAIL=$email
-    fi
+    echo -n "Attendance Administrator Email: "
+    read email
     echo -n "Attendance Administrator Password: "
     read -s pass
     echo ""
@@ -62,6 +59,7 @@ function login() {
     elif [[ $response =~ SUCCESS ]]; then
         printf "${GREEN}Validation successful${RESET}\n"
         ADMIN_PASS=$pass
+        ADMIN_EMAIL=$email
     else
         printf "${RED}${response}${RESET}\n"
     fi
