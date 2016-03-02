@@ -53,7 +53,7 @@ function login() {
     echo -n "Attendance Administrator Password: "
     read -s pass
     echo ""
-    response=$(curl -s $SERVER_ADDR -d "email=${ADMIN_EMAIL}&pass=${pass}&month=${MONTH}&day=${DAY}&year=${YEAR}")
+    response=$(curl -s $SERVER_ADDR -d "email=${email}&pass=${pass}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
     elif [[ $response =~ SUCCESS ]]; then
@@ -435,11 +435,12 @@ function main() {
         echo "12) Get percentage of meetings attended for by a student"
         echo "13) Sync logs from server"
         printf "${RESET}"
-        echo -e "14) Exit\n"
+        echo -e "14) Go online"
+        echo -e "15) Exit\n"
         printf "${GREEN}What would you like to do?>${RESET} "
         read choice
 
-        if [[ $choice == "14" ]]; then
+        if [[ $choice == "15" ]]; then
             printf "${RED}Exiting...${RESET}\n"
             exit
         fi
@@ -460,12 +461,23 @@ function main() {
             DAY=$(printf "%02d" "$day")
             YEAR=$year
             scan
+        elif [[ $choice == "14" ]]; then
+            if $OFFLINE; then
+                login
+                if [[ $ADMIN_PASS ]]; then
+                    OFFLINE=false
+                    remind_failed_ids
+                fi
+            else
+                printf "${YELLOW}You are already online${RESET}\n"
+            fi
         elif $OFFLINE; then
             echo "You are currently in offline mode. Available actions are:"
             echo ""
             echo "1)  Take attendance for today"
             echo "2)  Take attendance for a specific day"
-            echo "14) Exit"
+            echo "14) Go online"
+            echo "15) Exit"
             echo ""
             echo "For more functionality, re-run the script while connected to the internet"
         elif [[ $choice == "3" ]]; then
