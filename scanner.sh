@@ -113,14 +113,18 @@ function post_data() {
                 # server
                 while read line; do
                     response=$(curl -s $SERVER_ADDR -d "id=$line&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
-                    # If successful, remove from list of failed IDs
-                    if [[ $response =~ SUCCESS ]]; then
-                        sed -i "/$line/d" "$FAILED_LOG"
+                    # If unsuccessful, append to list of new IDs
+                    if [[ ${#response} == 0 || $response =~ ERROR ]]; then
+                        echo "$line" >> "$FAILED_LOG.new"
+                    else
                         echo "$line" >> "$LOG"
                     fi
                 done < "$FAILED_LOG"
-                # If failed log is empty, remove it
-                if [[ ! -s $FAILED_LOG ]]; then
+
+                # If there are more failed IDs, update the failed log
+                if [[ -f $FAILED_LOG.new ]]; then
+                    mv "$FAILED_LOG.new" "$FAILED_LOG"
+                else
                     rm "$FAILED_LOG"
                 fi
                 rm "$LOG.lock"
@@ -235,7 +239,7 @@ function scan() {
     LOG=$LOG_DIR/barcode-${MONTH}-${DAY}-${YEAR}.log
     FAILED_LOG=$LOG.FAILED
     printf "${YELLOW}Enter \"back\" to go back to the main menu${RESET}\n"
-    while [[ true ]]; do
+    while :; do
         show_prompt
         read barcode
         if [[ $barcode == "back" ]]; then
