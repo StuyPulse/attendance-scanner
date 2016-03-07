@@ -273,10 +273,9 @@ function upload_attendance_from_log() {
     basename=$(basename "$1" .log)
     IFS=- read junk MONTH DAY YEAR <<< "$basename"
     while read id; do
-        printf "${MAGENTA}Uploading $id${RESET}\n"
         response=$(curl -s $SERVER_ADDR -d "id=$id&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
         if [[ ${#response} != 0 && ! $response =~ ERROR ]]; then
-            printf "${GREEN}Done!${RESET}\n"
+            printf "${GREEN}Sent $id${RESET}\n"
         else
             printf "${RED}Failed to send $id${RESET}\n"
         fi
@@ -406,7 +405,7 @@ function dump_logs() {
         day=$(printf "%02d" "$day")
         month=$(printf "%02d" "$month")
 
-        echo -ne "\e[0K\rDownloading log $(( i-1 )) of $(( ${#split[@]}-2 ))..."
+        echo -ne "\e[0K\rDownloading log $(( i-1 )) of $(( ${#dates[@]}-2 ))..."
         sed "s/ID: //g" <(dump_day "$month" "$day" "$year") > "$LOG_DIR/barcode-${month}-${day}-${year}.log"
     done
     printf "\n${GREEN}Done!${RESET}\n"
@@ -525,9 +524,12 @@ function main() {
                 printf "${RED}Aborting.${RESET}\n"
             fi
         elif [[ $choice == "10" ]]; then
-            find $LOG_DIR -name "*.log"
+            find $LOG_DIR -name "*.log*"
             echo -ne "\nWhich log would you like to upload? "
             read log
+            if [[ $log =~ FAILED ]]; then
+                log=$(basename $log .FAILED)
+            fi
             upload_attendance_from_log "$log"
         elif [[ $choice == "11" ]]; then
             echo -n "Month to format? (1-12) "
