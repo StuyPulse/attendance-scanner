@@ -270,6 +270,9 @@ function upload_attendance_from_log() {
         printf "${RED}File not found!${RESET}\n"
         return
     fi
+    if [[ $1 =~ FAILED ]]; then
+        basename=$(basename $1 .FAILED)
+    fi
     basename=$(basename "$1" .log)
     IFS=- read junk MONTH DAY YEAR <<< "$basename"
     while read id; do
@@ -527,9 +530,6 @@ function main() {
             find $LOG_DIR -name "*.log*"
             echo -ne "\nWhich log would you like to upload? "
             read log
-            if [[ $log =~ FAILED ]]; then
-                log=$(basename $log .FAILED)
-            fi
             upload_attendance_from_log "$log"
         elif [[ $choice == "11" ]]; then
             echo -n "Month to format? (1-12) "
