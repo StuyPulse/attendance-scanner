@@ -270,11 +270,13 @@ function upload_attendance_from_log() {
         printf "${RED}File not found!${RESET}\n"
         return
     fi
-    if [[ $1 =~ FAILED ]]; then
-        basename=$(basename $1 .FAILED)
+    basename=$1
+    if [[ $basename =~ .*.FAILED ]]; then
+        basename=$(basename "$basename" .FAILED)
     fi
-    basename=$(basename "$1" .log)
+    basename=$(basename "$basename" .log)
     IFS=- read junk MONTH DAY YEAR <<< "$basename"
+    echo "Uploading attendance from ${MONTH}/${DAY}/${YEAR}"
     while read id; do
         response=$(curl -s $SERVER_ADDR -d "id=$id&email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&month=${MONTH}&day=${DAY}&year=${YEAR}")
         if [[ ${#response} != 0 && ! $response =~ ERROR ]]; then
@@ -283,6 +285,9 @@ function upload_attendance_from_log() {
             printf "${RED}Failed to send $id${RESET}\n"
         fi
     done < "$1"
+    if [[ $1 =~ .*.FAILED ]]; then
+        rm "$1"
+    fi
 }
 
 # Format attendance by removing dates we don't want, and converting csv to ods
