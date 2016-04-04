@@ -349,15 +349,15 @@ function format_attendance() {
     csv2ods -i "$date-Attendance.csv" -o "$date-Attendance.ods"
     printf "${GREEN}$date-Attendance.csv converted to $date-Attendance.ods${RESET}\n"
 
-    echo -n "Would you like to email this? [y/n] "
+    echo -n "Would you like to email this? (Only gmail is supported) [y/n] "
     read ans
     if [[ $ans =~ ^[Yy]$ ]]; then
         echo -n "Your Email: "
         read email
         printf "${YELLOW}If you have 2 factor authentication enabled, you need to generate an app specific password.\n"
-        printf "You can do so over at https://security.google.com/settings/security/apppasswords?pli=1 (assuming you use gmail)${RESET}\n"
+        printf "You can do so over at https://security.google.com/settings/security/apppasswords?pli=1${RESET}\n"
         echo -n "Password: "
-        read password
+        read -s password
         echo -n "Your Name: "
         read name
         echo -n "Recipient Email: "
