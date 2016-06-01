@@ -238,24 +238,108 @@ function scan() {
     # Update log name if dates were overridden
     LOG=$LOG_DIR/barcode-${MONTH}-${DAY}-${YEAR}.log
     FAILED_LOG=$LOG.FAILED
+
+    echo "1) Scan by id"
+    echo "2) Scan by name"
+    echo -n "Mode? "
+    read choice
+    if [[ $choice == "1" ]]; then
+        : # pass
+    elif [[ $choice == "2" ]]; then
+        scan_names
+        return
+    else
+        printf "${RED}Invalid choice${RESET}\n"
+        return
+    fi
+
     printf "${YELLOW}Enter \"back\" to go back to the main menu${RESET}\n"
     while :; do
         show_prompt
         read barcode
         if [[ $barcode == "back" ]]; then
-            main
-        elif echo "$barcode" | grep -v "^[0-9]\{9\}$" > /dev/null; then
+            return
+        elif echo "$barcode" | grep -q -v "^[0-9]\{9\}$"; then
             printf "${RED}ERROR: Invalid barcode${RESET}\n"
         else
-            if [[ ! -f $LOG ]]; then
+            if [[ ! -f "$LOG" ]]; then
                 touch "$LOG"
             fi
             # Only send barcodes that haven't been logged yet
-            # -q will only return exit code
             if grep -q "$barcode" "$LOG"; then
                 printf "${YELLOW}You already scanned in${RESET}\n"
             else
                 printf "${GREEN}Got barcode: ${barcode}${RESET}\n"
+                # Append barcode to log
+                echo "$barcode" >> "$LOG"
+                # Send data to server asynchronously
+                post_data "$barcode" &
+            fi
+        fi
+    done
+}
+
+function escape() {
+    sed 's/[]\.|$(){}?+*^]/\\&/g' <<< "$*"
+}
+
+function scan_names() {
+    if [[ ! -f "$OUTPUT_FILE.csv" ]]; then
+        printf "${YELLOW}Fetching data...${RESET}\n"
+        dump_csv
+    fi
+    # Update log name if dates were overridden
+    LOG=$LOG_DIR/barcode-${MONTH}-${DAY}-${YEAR}.log
+    FAILED_LOG=$LOG.FAILED
+    printf "${YELLOW}Enter \"back\" to go back to the main menu${RESET}\n"
+    while :; do
+        show_prompt
+        read name
+        if [[ $name == "back" ]]; then
+            return
+        elif [[ $name == "" ]]; then
+            continue
+        else
+            if [[ ! -f "$LOG" ]]; then
+                touch "$LOG"
+            fi
+
+            results=$(grep -i "^[0-9]\{9\},$(escape $name)" "$OUTPUT_FILE.csv" 2> /dev/null | cut -d, -f1-2)
+            num_results=$(echo "$results" | wc -l)
+
+            if [[ $results == "" ]]; then
+                printf "${RED}There is nobody with that name in the database.${RESET}\n"
+                continue
+            elif [[ $num_results == "1" ]]; then
+                IFS=',' read -r -a split <<< "$results"
+                barcode=${split[0]}
+                name=${split[1]}
+            else
+                printf "${YELLOW}There is more than one result. Please choose from the following:${RESET}\n"
+
+                IFS=$'\n' read -d '' -r -a split <<< "$results"
+                for index in "${!split[@]}"; do
+                    tmp=$(echo "${split[index]}" | cut -c 11-)
+                    echo "[$index] $tmp"
+                done
+
+                echo -n "Result? [0-$((${num_results}-1))] "
+                read result
+
+                if [[ "$result" =~ ^[0-9]+$ ]] && [ "$result" -ge 0 -a "$result" -lt $num_results ]; then
+                    target="${split[$result]}"
+                    barcode=$(echo "$target" | cut -d, -f1)
+                    name=$(echo "$target" | cut -d, -f2)
+                else
+                    printf "${RED}Invalid selection.${RESET}\n"
+                    continue
+                fi
+            fi
+
+            if grep -q "$barcode" "$LOG"; then
+                printf "${YELLOW}$name already scanned in${RESET}\n"
+            else
+                printf "${GREEN}Got: ${name} - ${barcode}${RESET}\n"
                 # Append barcode to log
                 echo "$barcode" >> "$LOG"
                 # Send data to server asynchronously
@@ -332,7 +416,7 @@ function format_attendance() {
     fi
     cut -d, -f-2,$first-$last < $OUTPUT_FILE.csv > "$file"
 
-    # Remove junk id's, including ones not linked to any names on Team Manager
+    # Remove junk id's, including ones not linked to any names on the server
     sed -i -e "/[0-9]\{9\},,/d" "$file"
     sed -i -e "/000000000,/d" "$file"
     printf "${GREEN}Data formatted to $file${RESET}\n"
