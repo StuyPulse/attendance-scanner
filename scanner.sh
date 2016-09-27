@@ -48,11 +48,9 @@ function remind_failed_ids() {
 
 function login() {
     # Read login credentials and validate with server
-    echo -n "Attendance Administrator Email: "
-    read email
-    echo -n "Attendance Administrator Password: "
-    read -s pass
-    echo ""
+    read -rep "Attendance Administrator Email: " email
+    read -resp "Attendance Administrator Password: " pass
+    echo
     response=$(curl -s $SERVER_ADDR -d "email=${email}&pass=${pass}&month=${MONTH}&day=${DAY}&year=${YEAR}")
     if [[ ${#response} == 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
@@ -72,7 +70,6 @@ function show_prompt() {
     if [[ $num_failed != "" ]]; then
         printf "${YELLOW}(!) ${num_failed} IDs failed to send to server${RESET}\n"
     fi
-    echo -n "Swipe card: "
 }
 
 function post_data() {
@@ -241,8 +238,7 @@ function scan() {
 
     echo "1) Scan by id"
     echo "2) Scan by name"
-    echo -n "Mode? "
-    read choice
+    read -rep "Mode? " choice
     if [[ $choice == "1" ]]; then
         : # pass
     elif [[ $choice == "2" ]]; then
@@ -256,7 +252,8 @@ function scan() {
     printf "${YELLOW}Enter \"back\" to go back to the main menu${RESET}\n"
     while :; do
         show_prompt
-        read barcode
+        read -rep "Enter barcode: " barcode
+        history -s "$barcode"
         if [[ $barcode == "back" ]]; then
             return
         elif echo "$barcode" | grep -q -v "^[0-9]\{9\}$"; then
@@ -294,7 +291,8 @@ function scan_names() {
     printf "${YELLOW}Enter \"back\" to go back to the main menu${RESET}\n"
     while :; do
         show_prompt
-        read name
+        read -rep "Enter name: " name
+        history -s "$name"
         if [[ $name == "back" ]]; then
             return
         elif [[ $name == "" ]]; then
@@ -323,8 +321,7 @@ function scan_names() {
                     echo "[$index] $tmp"
                 done
 
-                echo -n "Result? [0-$((${num_results}-1))] "
-                read result
+                read -rep "Result? [0-$((${num_results}-1))] " result
 
                 if [[ "$result" =~ ^[0-9]+$ ]] && [ "$result" -ge 0 -a "$result" -lt $num_results ]; then
                     target="${split[$result]}"
@@ -433,19 +430,14 @@ function format_attendance() {
     csv2ods -i "$date-Attendance.csv" -o "$date-Attendance.ods"
     printf "${GREEN}$date-Attendance.csv converted to $date-Attendance.ods${RESET}\n"
 
-    echo -n "Would you like to email this? (Only gmail is supported) [y/n] "
-    read ans
+    read -rep "Would you like to email this? (Only gmail is supported) [y/n] " ans
     if [[ $ans =~ ^[Yy]$ ]]; then
-        echo -n "Your Email: "
-        read email
+        read -rep "Your Email: " email
         printf "${YELLOW}If you have 2 factor authentication enabled, you need to generate an app specific password.\n"
         printf "You can do so over at https://security.google.com/settings/security/apppasswords?pli=1${RESET}\n"
-        echo -n "Password: "
-        read -s password
-        echo -n "Your Name: "
-        read name
-        echo -n "Recipient Email: "
-        read recipient
+        read -resp "Password: " password
+        read -rep "Your Name: " name
+        read -rep "Recipient Email: " recipient
         mail_attendance "$date" "$email" "$password" "$name" "$recipient"
     fi
 }
@@ -532,8 +524,7 @@ function main() {
         printf "${RESET}"
         echo -e "14) Go online"
         echo -e "15) Exit\n"
-        printf "${GREEN}What would you like to do?>${RESET} "
-        read choice
+        read -rep "What would you like to do?> " choice
 
         if [[ $choice == "15" ]]; then
             printf "${RED}Exiting...${RESET}\n"
@@ -546,12 +537,9 @@ function main() {
             YEAR=$(date +%Y)
             scan
         elif [[ $choice == "2" ]]; then
-            echo -n "Which month do you want to scan for? (1-12) "
-            read month
-            echo -n "Which day do you want to scan for? (1-31) "
-            read day
-            echo -n "Which year do you want to scan for? (####) "
-            read year
+            read -rep "Which month do you want to scan for? (1-12) " month
+            read -rep "Which day do you want to scan for? (1-31) " day
+            read -rep "Which year do you want to scan for? (####) " year
             MONTH=$(printf "%02d" "$month")
             DAY=$(printf "%02d" "$day")
             YEAR=$year
@@ -579,36 +567,29 @@ function main() {
             printf "${GREEN}Dumping data...${RESET}\n"
             dump_data
         elif [[ $choice == "4" ]]; then
-            echo -n "Which month do you want to see the attendance for? (1-12) "
-            read month
-            echo -n "Which day do you want to see the attendance for? (1-31) "
-            read day
-            echo -n "Which year do you want to see the attendance for? (####) "
-            read year
+            read -rep "Which month do you want to see the attendance for? (1-12) " month
+            read -rep "Which day do you want to see the attendance for? (1-31) " day
+            read -rep "Which year do you want to see the attendance for? (####) " year
             month=$(printf "%02d" "$month")
             day=$(printf "%02d" "$day")
             dump_day "$month" "$day" "$year"
         elif [[ $choice == "5" ]]; then
             dump_today
         elif [[ $choice == "6" ]]; then
-            echo -n "Please enter the ID for the student: "
-            read id
+            read -rep "Please enter the ID for the student: " id
+            history -s "$id"
             dump_student "$id"
         elif [[ $choice == "7" ]]; then
             dump_csv
         elif [[ $choice == "8" ]]; then
-            echo -n "Please enter the ID for the student: "
-            read id
-            echo -n "What is the year you want to delete? (####) "
-            read year
-            echo -n "What is the month you want to delete? (1-12) "
-            read month
-            echo -n "What is the day you want to delete? (1-31) "
-            read day
+            read -rep "Please enter the ID for the student: " id
+            history -s "$id"
+            read -rep "What is the year you want to delete? (####) " year
+            read -rep "What is the month you want to delete? (1-12) " month
+            read -rep "What is the day you want to delete? (1-31) " day
             delete_date_for_student "$month" "$day" "$year" "$id"
         elif [[ $choice == "9" ]]; then
-            printf "${RED}Are you sure you want to delete all the data? (y/n)${RESET} "
-            read ans
+            read -rep "Are you sure you want to delete all the data? (y/n) " ans
             if [[ $ans == "y" ]]; then
                 printf "${GREEN}Dropping all data...${RESET}\n"
                 drop_data
@@ -617,16 +598,15 @@ function main() {
             fi
         elif [[ $choice == "10" ]]; then
             find $LOG_DIR -name "*.log*"
-            echo -ne "\nWhich log would you like to upload? "
-            read log
+            read -rep "Which log would you like to upload? " log
+            history -s "$log"
             upload_attendance_from_log "$log"
         elif [[ $choice == "11" ]]; then
-            echo -n "Month to format? (1-12) "
-            read month
+            read -rep "Month to format? (1-12) " month
             format_attendance "$month"
         elif [[ $choice == "12" ]]; then
-            echo -n "Please enter the ID for the student: "
-            read id
+            read -rep "Please enter the ID for the student: " id
+            history -s "$id"
             get_attendance_percentage "$id"
         elif [[ $choice == "13" ]]; then
             dump_logs
