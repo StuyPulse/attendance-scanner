@@ -122,9 +122,9 @@ function post_data() {
                 if [[ -f $FAILED_LOG.new ]]; then
                     mv "$FAILED_LOG.new" "$FAILED_LOG"
                 else
-                    rm "$FAILED_LOG"
+                    rm -f "$FAILED_LOG"
                 fi
-                rm "$LOG.lock"
+                rm -f "$LOG.lock"
             fi
         fi
     fi
@@ -281,9 +281,10 @@ function escape() {
 }
 
 function scan_names() {
-    if [[ ! -f "$OUTPUT_FILE.csv" ]]; then
+    if [[ ! -f "STUDENTS.csv" ]]; then
         printf "${YELLOW}Fetching data...${RESET}\n"
         dump_csv
+        mv "$OUTPUT_FILE.csv" "STUDENTS.csv"
     fi
     # Update log name if dates were overridden
     LOG=$LOG_DIR/barcode-${MONTH}-${DAY}-${YEAR}.log
@@ -302,7 +303,7 @@ function scan_names() {
                 touch "$LOG"
             fi
 
-            results=$(grep -i "^[0-9]\{9\},$(escape $name)" "$OUTPUT_FILE.csv" 2> /dev/null | cut -d, -f1-2)
+            results=$(grep -i "^[0-9]\{9\},$(escape $name)" "STUDENTS.csv" 2> /dev/null | cut -d, -f1-2)
             num_results=$(echo "$results" | wc -l)
 
             if [[ $results == "" ]]; then
