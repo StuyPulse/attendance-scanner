@@ -38,7 +38,7 @@ def dump_data():
     students = Student.query()
     retStr = ""
     for student in students.iter():
-        id = int(student.get_id())
+        id = student.get_id()
         if id in osis_data:
             retStr += "Name: " + osis_data[id]['Name'] + "\n"
         retStr += "ID: %s\n%s\n\n" % (student.get_id(), student.get_attendance())
@@ -66,13 +66,12 @@ def get_dates():
                 dates.append(date)
     return dates
 
-def get_csv():
+def get_csv(dates):
     osis_data = get_osis_data()
     if "ERROR" in osis_data:
         return osis_data
     students = Student.query()
     retStr = "ID,Name,"
-    dates = get_dates()
 
     numDates = len(dates)
     # Add dates to csv
@@ -84,7 +83,7 @@ def get_csv():
             retStr += ","
     retStr += "\n"
     for student in students.iter():
-        id = student.get_id()
+        id = int(student.get_id())
         retStr += "%s," % id
         if id in osis_data:
             retStr += osis_data[id]['Name'] + ","

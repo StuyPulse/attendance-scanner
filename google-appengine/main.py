@@ -36,8 +36,9 @@ def index():
 
             # If ID is supplied, update attendance for ID
             if request.form.has_key('id'):
+                id = request.form["id"]
                 try:
-                    id = int(request.form['id'])
+                    int(id)
                 except ValueError:
                     return "ERROR: ID must be a number\n"
 
@@ -53,7 +54,7 @@ def index():
                     student = Student(id=id)
                 student.scan(month, day, year)
 
-                return "SUCCESS: Server received: " + request.form['id'] + "\n"
+                return "SUCCESS: Server received: " + id + "\n"
             # Otherwise, acknowledge successful sign in
             else:
                 return "SUCCESS\n"
@@ -87,8 +88,9 @@ def day():
 @authenticate
 def student():
     if request.form.has_key('id'):
+        id = request.form["id"]
         try:
-            id = int(request.form["id"])
+            int(id)
         except ValueError:
             return "ERROR: ID must be a number\n"
 
@@ -106,8 +108,9 @@ def delete():
         request.form.has_key('day') and\
         request.form.has_key('year') and\
         request.form.has_key('id'):
+        id = request.form["id"]
         try:
-            id = int(request.form['id'])
+            int(id)
         except ValueError:
             return "ERROR: ID must be a number\n"
 
@@ -131,8 +134,9 @@ def delete():
 @authenticate
 def percent():
     if request.form.has_key("id"):
+        id = request.form["id"]
         try:
-            id = int(request.form["id"])
+            int(id)
         except ValueError:
             return "ERROR: ID must be a number\n"
 
@@ -144,10 +148,20 @@ def percent():
     else:
         return "ERROR: Malformed request\n"
 
+
 @app.route("/csv", methods=['POST'])
 @authenticate
-def csvDump():
-    return students.get_csv()
+def csv_dump():
+    month = request.form.get("month")
+    dates = students.get_dates()
+    if month:
+        try:
+            month = int(month)
+        except ValueError:
+            return "ERROR: Month must be a number\n"
+
+        dates = filter(lambda d: d.month == month, dates)
+    return students.get_csv(dates)
 
 @app.route("/dropdb", methods=['POST'])
 @authenticate
@@ -174,15 +188,17 @@ def webconsole():
                 for student in s.iter():
                     retStr += "<tr>"
                     retStr += "<td>%s</td>" % student._key.id()
-                    if osis_data.has_key(int(student._key.id())):
-                        retStr += "<td>%s</td>" % osis_data[int(student._key.id())]['Name']
+                    id = int(student.get_id())
+                    if id in osis_data:
+                        retStr += "<td>%s</td>" % osis_data[id]['Name']
                     else:
                         retStr += "<td></td>"
                     retStr += "<td>%s</td>" % student.get_attendance()
                     retStr += "</tr>"
                 return retStr + "</table"
             elif action == 'csv':
-                return students.get_csv().replace('\n', '<br/>')
+                dates = students.get_dates()
+                return students.get_csv(dates).replace('\n', '<br/>')
             elif action == 'day':
                 retStr = "Attendance for " + request.form['month'] + "/" +\
                             request.form['day'] + "/" + request.form['year'] + "<br/>"
@@ -191,9 +207,10 @@ def webconsole():
                                     int(request.form['year'])).replace('\n', '<br/>')
                 return retStr
             elif action == 'student':
-                retStr = "Attendance for " + request.form['student'] + "<br/>"
+                id = request.form["student"]
+                retStr = "Attendance for " + id + "<br/>"
                 try:
-                    id = int(request.form["student"])
+                    int(id)
                 except ValueError:
                     return "ERROR: ID must be a number\n"
 

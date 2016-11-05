@@ -205,7 +205,11 @@ function delete_date_for_student() {
 }
 
 function dump_csv() {
-    response=$(curl -s $SERVER_ADDR/csv -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}")
+    data="email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&freq=$1"
+    if [[ $1 == "month" ]]; then
+        data="$data&month=$2"
+    fi
+    response=$(curl -s $SERVER_ADDR/csv -d "$data")
     if [[ $? != 0 ]]; then
         printf "${RED}ERROR: Could not contact server${RESET}\n"
     elif [[ $response =~ ERROR ]]; then
@@ -372,95 +376,6 @@ function upload_attendance_from_log() {
     fi
 }
 
-# Format attendance by removing dates we don't want, and converting csv to ods
-function format_attendance() {
-    # Number to Month
-    case $1 in
-    [1-9]|1[0-2])
-        date=$(date -d "$1/01" +%B) ;;
-    *)
-        printf "${RED}Invalid month${RESET}"
-        return ;;
-    esac
-
-    dump_csv
-    file="$date-Attendance.csv"
-
-    head=$(head -n 1 "$OUTPUT_FILE.csv")
-    found=0
-    first=0
-    last=0
-    IFS=',' read -r -a split <<< "$head"
-
-    for element in "${split[@]}"; do
-        if [[ $element =~ ^$1/[0-9]+/[0-9]{4}$ ]]; then
-            found=1
-        else
-            if [[ $found == 1 ]]; then # We've finished going through meetings of the desired month
-                break
-            fi
-        fi
-
-        if [[ $found == 0 ]]; then # Only increment until we've found the first meeting of the month
-            first=$((first+1))
-        fi
-        last=$((last+1))
-    done
-    first=$((first+1)) # Correct offset
-
-    if [[ $first -gt $last ]]; then
-        printf "${RED}No data for that month.${RESET}\n"
-        return
-    fi
-    cut -d, -f-2,$first-$last < $OUTPUT_FILE.csv > "$file"
-
-    # Remove junk id's, including ones not linked to any names on the server
-    sed -i -e "/[0-9]\{9\},,/d" "$file"
-    sed -i -e "/000000000,/d" "$file"
-    printf "${GREEN}Data formatted to $file${RESET}\n"
-
-    if [[ ! $(command -v csv2ods) ]]; then
-        printf "${YELLOW}csv2ods not detected. Attempting installation...${RESET}\n"
-        sudo apt-get install python-odf
-        if [[ ! $(command -v csv2ods) ]]; then
-            printf "${RED}csv2ods still not detected! Aborting!${RESET}\n"
-            return
-        fi
-    fi
-    printf "${YELLOW}Converting from csv to ods...${RESET}\n"
-    csv2ods -i "$date-Attendance.csv" -o "$date-Attendance.ods"
-    printf "${GREEN}$date-Attendance.csv converted to $date-Attendance.ods${RESET}\n"
-
-    read -rep "Would you like to email this? (Only gmail is supported) [y/n] " ans
-    if [[ $ans =~ ^[Yy]$ ]]; then
-        read -rep "Your Email: " email
-        printf "${YELLOW}If you have 2 factor authentication enabled, you need to generate an app specific password.\n"
-        printf "You can do so over at https://security.google.com/settings/security/apppasswords?pli=1${RESET}\n"
-        read -resp "Password: " password
-        read -rep "Your Name: " name
-        read -rep "Recipient Email: " recipient
-        mail_attendance "$date" "$email" "$password" "$name" "$recipient"
-    fi
-}
-
-function mail_attendance() {
-    if [[ ! $(command -v mime-tool) ]]; then
-        printf "${YELLOW}mime-tool not detected. Attempting installation...${RESET}\n"
-        sudo apt-get install topal
-        if [[ ! $(command -v mime-tool) ]]; then
-            printf "${RED}mime-tool still not detected! Aborting!${RESET}\n"
-            return
-        fi
-    fi
-
-    printf "${YELLOW}Crafting email...${RESET}\n"
-    echo "From: \"$4\" <$2>" > message.txt
-    echo "Subject: Attendance for $date" >> message.txt
-    mime-tool "$date-Attendance.ods" >> message.txt
-    curl "smtps://smtp.gmail.com:465" --user "$2:$3" --mail-from "$2" --mail-rcpt "$5" --ssl --upload-file message.txt
-    rm message.txt "$date-Attendance.csv" "$OUTPUT_FILE.csv"
-}
-
 function get_attendance_percentage() {
     response=$(curl -s $SERVER_ADDR/percent -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1")
     if [[ ${#response} == 0 ]]; then
@@ -511,15 +426,15 @@ function main() {
         if $OFFLINE; then
             printf "${RED}"
         fi
-        echo "3)  Dump(show) all attendance data"
+        echo "3)  Show all attendance data"
         echo "4)  Show attendance data for a specific day"
         echo "5)  Show attendance data for today"
         echo "6)  Show attendance data for a student"
-        echo "7)  Export data to CSV"
-        echo "8)  Delete attendance for a student on a particular day"
-        echo "9)  Drop(delete) all attendance data"
-        echo "10) Upload attendance from a log"
-        echo "11) Format attendance for a specific month (and option to email it)"
+        echo "7)  Export all data to CSV"
+        echo "8)  Export data to CSV for a specific month"
+        echo "9)  Delete attendance for a student on a particular day"
+        echo "10) Drop(delete) all attendance data"
+        echo "11) Upload attendance from a log"
         echo "12) Get percentage of meetings attended for by a student"
         echo "13) Sync logs from server"
         printf "${RESET}"
@@ -583,13 +498,16 @@ function main() {
         elif [[ $choice == "7" ]]; then
             dump_csv
         elif [[ $choice == "8" ]]; then
+            read -rep "Month to format? (1-12) " month
+            dump_csv "month" "$month"
+        elif [[ $choice == "9" ]]; then
             read -rep "Please enter the ID for the student: " id
             history -s "$id"
             read -rep "What is the year you want to delete? (####) " year
             read -rep "What is the month you want to delete? (1-12) " month
             read -rep "What is the day you want to delete? (1-31) " day
             delete_date_for_student "$month" "$day" "$year" "$id"
-        elif [[ $choice == "9" ]]; then
+        elif [[ $choice == "10" ]]; then
             read -rep "Are you sure you want to delete all the data? (y/n) " ans
             if [[ $ans == "y" ]]; then
                 printf "${GREEN}Dropping all data...${RESET}\n"
@@ -597,14 +515,11 @@ function main() {
             else
                 printf "${RED}Aborting.${RESET}\n"
             fi
-        elif [[ $choice == "10" ]]; then
+        elif [[ $choice == "11" ]]; then
             find $LOG_DIR -name "*.log*"
             read -rep "Which log would you like to upload? " log
             history -s "$log"
             upload_attendance_from_log "$log"
-        elif [[ $choice == "11" ]]; then
-            read -rep "Month to format? (1-12) " month
-            format_attendance "$month"
         elif [[ $choice == "12" ]]; then
             read -rep "Please enter the ID for the student: " id
             history -s "$id"
