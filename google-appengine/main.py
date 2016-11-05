@@ -127,6 +127,23 @@ def delete():
     else:
         return "ERROR: Malformed request\n"
 
+@app.route("/percent", methods=["POST"])
+@authenticate
+def percent():
+    if request.form.has_key("id"):
+        try:
+            id = int(request.form["id"])
+        except ValueError:
+            return "ERROR: ID must be a number\n"
+
+        student = ndb.Key(Student, id).get()
+        if student:
+            return str(students.get_percentage(student))
+        else:
+            return "ERROR: Student does not exist\n"
+    else:
+        return "ERROR: Malformed request\n"
+
 @app.route("/csv", methods=['POST'])
 @authenticate
 def csvDump():

@@ -468,7 +468,6 @@ function get_attendance_percentage() {
     elif [[ $response =~ ERROR ]]; then
         printf "${RED}${response}${RESET}\n"
     else
-        echo $response
         printf "${YELLOW}$1 has attended $response%% of meetings.${RESET}"
     fi
 }

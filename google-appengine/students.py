@@ -52,18 +52,28 @@ def get_day(month, day, year):
             retStr += "ID: %s\n" % student.get_id()
     return retStr
 
+def get_percentage(student):
+    total = float(len(get_dates()))
+    attended = float(len(student.attendance_dates))
+    return (attended / total) * 100
+
+def get_dates():
+    students = Student.query()
+    dates = []
+    for student in students.iter():
+        for date in student.attendance_dates:
+            if date not in dates:
+                dates.append(date)
+    return dates
+
 def get_csv():
     osis_data = get_osis_data()
     if "ERROR" in osis_data:
         return osis_data
     students = Student.query()
     retStr = "ID,Name,"
-    dates = []
-    # Get all valid attendance dates
-    for student in students.iter():
-        for date in student.attendance_dates:
-            if date not in dates:
-                dates.append(date)
+    dates = get_dates()
+
     numDates = len(dates)
     # Add dates to csv
     dates = sorted(dates)
