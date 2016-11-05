@@ -462,14 +462,15 @@ function mail_attendance() {
 }
 
 function get_attendance_percentage() {
-    dump_csv
-    num_meetings=$(head -1 "$OUTPUT_FILE.csv" | sed "s/[^,]//g" | wc -c)
-    # Account for ID and Name taking up two columns
-    (( num_meetings=num_meetings - 2 ))
-    num_attended=$(grep "$1" "$OUTPUT_FILE.csv" | cut -d"," -f3- | grep -o "X" | wc -l)
-    percent_attended=$(bc -l <<< "$num_attended/$num_meetings*100")
-    echo "Student $1 has attended $num_attended out of $num_meetings (or $percent_attended% of meetings)"
-    rm "$OUTPUT_FILE.csv"
+    response=$(curl -s $SERVER_ADDR/percent -d "email=${ADMIN_EMAIL}&pass=${ADMIN_PASS}&id=$1")
+    if [[ ${#response} == 0 ]]; then
+        printf "${RED}ERROR: Could not contact server${RESET}\n"
+    elif [[ $response =~ ERROR ]]; then
+        printf "${RED}${response}${RESET}\n"
+    else
+        echo $response
+        printf "${YELLOW}$1 has attended $response%% of meetings.${RESET}"
+    fi
 }
 
 function dump_logs() {
