@@ -16,13 +16,16 @@ def get_osis_data():
         result = urllib2.urlopen(url)
         csv_reader = csv.reader(result)
         osis_meta = csv_reader.next() # Gets the first line in the OSIS Spreadsheet with headers
-        col_name = osis_meta.index("Name")
-        col_id = osis_meta.index("ID")
-        col_osis = osis_meta.index("OSIS")
+        col_last_name = osis_meta.index("Last Name")
+        col_first_name = osis_meta.index("First Name")
+        col_osis = osis_meta.index("OSIS Number")
         osis_data = {}
         for row in csv_reader:
             student_id = ''.join(re.findall(r'\b\d+\b', row[col_osis]))
-            osis_data[int(student_id)] = {'Name': row[col_name], 'ID': row[col_id]}
+            if len(str(student_id)) != 9:
+                continue
+            name = "%s %s" % (row[col_first_name], row[col_last_name])
+            osis_data[int(student_id)] = {'Name': name, "ID": row[col_osis]}
         return osis_data
     except urllib2.URLError, e:
         logging.error(e)
