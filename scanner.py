@@ -6,7 +6,6 @@ import datetime
 import glob
 import os
 import requests
-import signal
 import sys
 import threading
 import traceback
@@ -32,10 +31,6 @@ LOG_FAILED = LOG + ".FAILED"
 STUDENT_DATA = {}
 
 file_lock = threading.Lock()
-
-def cleanup(signal, frame):
-    display.close()
-    sys.exit(0)
 
 def append_log(s, log):
     file_lock.acquire()
@@ -407,14 +402,14 @@ def main():
                 display.add_message(options, color=display.YELLOW)
             else:
                 display.add_message("Invalid choice.", color=display.RED)
+        except KeyboardInterrupt:
+            return
         except:
             error = traceback.format_exc()
             append_log(error, "error.log")
             display.add_message("Something went wrong!", color=display.RED)
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, cleanup)
-
     stdscr = curses.initscr()
     display = display.ScannerDisplay(stdscr)
 
@@ -429,4 +424,4 @@ if __name__ == "__main__":
         pass
 
     main()
-    cleanup()
+    display.close()
