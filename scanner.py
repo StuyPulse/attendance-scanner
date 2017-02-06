@@ -303,6 +303,7 @@ def upload_all_failed_ids():
 
     display.add_message("Preparing to upload all pending IDs to the server!", color=display.MAGENTA)
     for log in logs:
+        log = log[:log.rfind(".FAILED")]
         upload_failed_ids(log)
 
 def get_student_percentage(osis):
