@@ -190,7 +190,7 @@ def handle_response(response, out=OUTPUT_FILE, save=False):
 
 def dump_data(out=OUTPUT_FILE):
     response = send_request("/dump", data={})
-    handle_response(response, file=out, save=True)
+    handle_response(response, out=out, save=True)
 
 def dump_day(month, day, year):
     data = {
@@ -199,7 +199,7 @@ def dump_day(month, day, year):
         "year": year
     }
     response = send_request("/day", data)
-    handle_response(response, file=OUTPUT_FILE, save=True)
+    handle_response(response, out=OUTPUT_FILE, save=True)
 
 def dump_today():
     today = datetime.datetime.now()
@@ -210,7 +210,7 @@ def dump_student(osis):
         "id": osis
     }
     response = send_request("/student", data)
-    handle_response(response, file="%s.log" % osis, save=True)
+    handle_response(response, out="%s.log" % osis, save=True)
 
 def delete_date(osis, month, day, year):
     data = {
@@ -227,7 +227,7 @@ def dump_csv(month=None, out=OUTPUT_FILE + ".csv"):
     if month:
         data["month"] = month
     response = send_request("/csv", data)
-    handle_response(response, file=out, save=True)
+    handle_response(response, out=out, save=True)
 
 def drop_database():
     response = send_request("/dropdb", {})
