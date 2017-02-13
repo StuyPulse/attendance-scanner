@@ -324,7 +324,7 @@ def send_request(path, data):
     return response.text.strip()
 
 def main():
-    global OFFLINE
+    global OFFLINE, MONTH, DAY, YEAR
     while True:
         try:
             choice = menu()
