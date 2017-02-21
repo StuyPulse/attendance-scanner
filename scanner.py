@@ -87,6 +87,7 @@ def already_scanned(osis):
 
 def load_student_data():
     if not os.path.exists("STUDENTS.csv"):
+        display.add_message("Downloading student data...", color=display.YELLOW)
         dump_csv(out="STUDENTS.csv")
 
     csv_reader = csv.reader(open("STUDENTS.csv", "r"))
