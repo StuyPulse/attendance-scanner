@@ -1,5 +1,9 @@
 # Attendance ID Scanner
 
+External dependencies for the scanner can be installed by running:
+
+`$ pip install -r requirements.txt`
+
 ## Setting up a local development environment
 #### Download and install the Google App Engine SDK
 Select the SDK for Python
