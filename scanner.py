@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import atexit
 import csv
 import curses
 import datetime
@@ -57,8 +58,12 @@ def format_date(month, day, year):
 def login():
     global ADMIN_EMAIL, ADMIN_PASSWORD
 
-    email = display.get_input(prompt="Administrator Email: ")
-    password = display.get_input(prompt="Administrator Password: ", hidden=True)
+    try:
+        email = display.get_input(prompt="Administrator Email: ")
+        password = display.get_input(prompt="Administrator Password: ", hidden=True)
+    except KeyboardInterrupt:
+        sys.exit(0)
+
     now = datetime.datetime.now()
     data = {
         "email": email,
@@ -414,6 +419,7 @@ def main():
 if __name__ == "__main__":
     stdscr = curses.initscr()
     display = display.ScannerDisplay(stdscr)
+    atexit.register(display.close)
 
     if not os.path.exists(LOG_DIR):
         os.mkdir(LOG_DIR)
@@ -426,4 +432,3 @@ if __name__ == "__main__":
         pass
 
     main()
-    display.close()
