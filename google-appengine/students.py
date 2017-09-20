@@ -18,7 +18,9 @@ def get_osis_data():
         osis_meta = csv_reader.next() # Gets the first line in the OSIS Spreadsheet with headers
         col_last_name = osis_meta.index("Last Name")
         col_first_name = osis_meta.index("First Name")
-        col_osis = osis_meta.index("OSIS Number")
+        col_osis = osis_meta.index("OSIS")
+        if col_osis == -1:
+            col_osis = osis_meta.index("OSIS Number")
         osis_data = {}
         for row in csv_reader:
             student_id = ''.join(re.findall(r'\b\d+\b', row[col_osis]))
