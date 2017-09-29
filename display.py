@@ -25,6 +25,7 @@ class ScannerDisplay:
 
         self.stdscr = stdscr
         self.messages = []
+        self.message_buffer = []
         self.input_buffer = ""
         self.prompt = prompt
 
@@ -35,6 +36,20 @@ class ScannerDisplay:
         self.win_messages = stdscr.derwin(*messages_hwyx)
         self.win_status_bar = stdscr.derwin(*status_hwyx)
         self.win_input = stdscr.derwin(*input_hwyx)
+        self.redraw()
+
+    def resize(self):
+        height, width = self.stdscr.getmaxyx()
+        self.win_input.mvwin(height - 1, 0)
+        self.win_input.resize(1, width)
+
+        self.win_status_bar.mvwin(height - 2, 0)
+        self.win_status_bar.resize(1, width)
+
+        self.win_messages.resize(height - 2, width)
+
+        for message in self.messages:
+            self.add_message_buffer(message[0], message[1])
         self.redraw()
 
     def redraw(self):
@@ -52,15 +67,15 @@ class ScannerDisplay:
         height, width = self.win_messages.getmaxyx()
         self.win_messages.clear()
 
-        start = max(len(self.messages) - height, 0)
-        self.messages = self.messages[start:]
+        start = max(len(self.message_buffer) - height, 0)
 
-        for x in range(min(height, len(self.messages))):
-            message = self.messages[x]
+        for x in range(min(height, len(self.message_buffer))):
+            message = self.message_buffer[start]
             color = curses.color_pair(message[1])
             if message[1] != 0:
                 color |= curses.A_BOLD
             self.win_messages.addstr(x, 0, message[0], color)
+            start += 1
 
         self.win_messages.refresh()
 
@@ -68,17 +83,28 @@ class ScannerDisplay:
         height, width = self.win_input.getmaxyx()
         self.win_input.clear()
 
-        self.win_input.addstr(0, 0, self.prompt)
-        self.win_input.addstr(0, len(self.prompt), self.input_buffer)
+        combined = self.prompt + self.input_buffer
+        start = max(len(combined) - width + 1, 0)
+        self.win_input.addstr(0, 0, combined[start:])
         self.win_input.cursyncup()
         self.win_input.refresh()
 
     @synchronized
     def add_message(self, message, color=0):
-        message = message.split("\n")
-        message = [(m, color) for m in message]
-        self.messages += message
+        self.messages.append((message, color))
+        self.add_message_buffer(message, color)
         self.redraw()
+
+    def add_message_buffer(self, message, color=0):
+        message = message.replace("\n", " ")
+        _, width = self.stdscr.getmaxyx()
+
+        while len(message) >= width:
+            self.message_buffer.append((message[:width], color))
+            message = message[width:]
+
+        if message:
+            self.message_buffer.append((message, color))
 
     def get_input(self, prompt="", hidden=False, _filter=None):
         if hidden:
@@ -99,6 +125,8 @@ class ScannerDisplay:
             elif last == curses.KEY_BACKSPACE or last == 127:
                 if len(self.input_buffer) > 0:
                     self.input_buffer = self.input_buffer[:-1]
+            elif last == curses.KEY_RESIZE:
+                self.resize()
             elif _filter is None:
                 if 32 <= last <= 126:
                     self.input_buffer += chr(last)
@@ -119,8 +147,3 @@ class ScannerDisplay:
         del self.stdscr
         del self.win_messages
         del self.win_input
-
-    def clear(self):
-        self.messages = []
-        self.win_messages.clear()
-        self.win_messages.refresh()
