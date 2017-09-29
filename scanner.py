@@ -6,12 +6,17 @@ import curses
 import datetime
 import glob
 import os
-import requests
 import sys
 import threading
 import traceback
 
 import display
+
+try:
+    import requests
+except:
+    print("Please install the requests module (pip install --user requests)")
+    sys.exit(0)
 
 SERVER_ADDRESS = "https://stuypulse-attendance.appspot.com"
 ADMIN_EMAIL = ""
