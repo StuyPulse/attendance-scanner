@@ -1,7 +1,9 @@
 import curses
 import threading
 
+
 def synchronized(f):
+    """Wrapper for executing a function synchronously"""
     f.__lock__ = threading.Lock()
 
     def wrapper(*args, **kwargs):
@@ -10,7 +12,10 @@ def synchronized(f):
 
     return wrapper
 
+
 class ScannerDisplay:
+    """Display object for the scanner"""
+
     RED = curses.COLOR_RED
     GREEN = curses.COLOR_GREEN
     YELLOW = curses.COLOR_YELLOW
@@ -39,6 +44,7 @@ class ScannerDisplay:
         self.redraw()
 
     def resize(self):
+        """Handles the window resize event"""
         height, width = self.stdscr.getmaxyx()
         self.win_input.mvwin(height - 1, 0)
         self.win_input.resize(1, width)
@@ -53,6 +59,7 @@ class ScannerDisplay:
         self.redraw()
 
     def redraw(self):
+        """Redraws the entire screen"""
         height, width = self.stdscr.getmaxyx()
         self.stdscr.clear()
         self.stdscr.refresh()
@@ -64,9 +71,11 @@ class ScannerDisplay:
         self.redraw_input()
 
     def redraw_messages(self):
+        """Redraws all messages in the message window"""
         height, width = self.win_messages.getmaxyx()
         self.win_messages.clear()
 
+        # Only draw what the user can see
         start = max(len(self.message_buffer) - height, 0)
 
         for x in range(min(height, len(self.message_buffer))):
@@ -80,22 +89,30 @@ class ScannerDisplay:
         self.win_messages.refresh()
 
     def redraw_input(self):
+        """Redraws the input window"""
         height, width = self.win_input.getmaxyx()
         self.win_input.clear()
 
+        # Only draw what the user can see
         combined = self.prompt + self.input_buffer
         start = max(len(combined) - width + 1, 0)
         self.win_input.addstr(0, 0, combined[start:])
+
         self.win_input.cursyncup()
         self.win_input.refresh()
 
     @synchronized
     def add_message(self, message, color=0):
+        """Adds a message to the screen"""
         self.messages.append((message, color))
         self.add_message_buffer(message, color)
         self.redraw()
 
     def add_message_buffer(self, message, color=0):
+        """
+        Adds a message to the message buffer, splitting the message if necessary
+        according to screen width
+        """
         message = message.replace("\n", " ")
         _, width = self.stdscr.getmaxyx()
 
@@ -107,6 +124,14 @@ class ScannerDisplay:
             self.message_buffer.append((message, color))
 
     def get_input(self, prompt="", hidden=False, _filter=None):
+        """
+        Gets input from the user
+
+        Args:
+            prompt: Prompt to show the user before reading any input
+            hidden: Whether or not to show the input as it is typed
+            _filter: Function for filtering input characters
+        """
         if hidden:
             curses.noecho()
 
@@ -136,13 +161,16 @@ class ScannerDisplay:
                 self.redraw_input()
 
     def get_number(self, prompt="", hidden=False):
+        """Gets a number from the user"""
         return int(self.get_input(prompt=prompt, hidden=hidden, _filter=str.isdigit))
 
     def set_prompt(self, prompt):
+        """Set the current input prompt"""
         self.prompt = prompt
         self.redraw_input()
 
     def close(self):
+        """Closes the window"""
         curses.endwin()
         del self.stdscr
         del self.win_messages

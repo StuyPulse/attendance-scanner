@@ -34,17 +34,20 @@ STUDENT_DATA = {}
 file_lock = threading.Lock()
 
 def append_log(s, log):
+    """Append to a log"""
     file_lock.acquire()
     with open(log, "a") as f:
         f.write("%s\n" % s)
     file_lock.release()
 
 def set_log_names():
+    """Set the global log names"""
     global LOG, FAILED_LOG
     LOG = LOG_DIR + LOG_FORMAT % (MONTH, DAY, YEAR)
     FAILED_LOG = LOG + ".FAILED"
 
 def get_date_from_log(log):
+    """Retrieve the date from a log file"""
     log = log[:log.find(".")]
     if "/" in log:
         log = log[log.rfind("/")+1:]
@@ -52,10 +55,12 @@ def get_date_from_log(log):
     return month, day, year
 
 def format_date(month, day, year):
+    """Format the date as `month day, year`"""
     date = datetime.datetime(year, month, day)
     return date.strftime("%B %d, %Y")
 
 def login():
+    """Authenticate the user"""
     global ADMIN_EMAIL, ADMIN_PASSWORD
 
     try:
@@ -84,6 +89,7 @@ def login():
     return False
 
 def already_scanned(osis):
+    """Check if an id was already scanned in based on local logs"""
     log = LOG_DIR + LOG_FORMAT % (MONTH, DAY, YEAR)
     if os.path.exists(log):
         return osis in [int(x) for x in open(log, "r").readlines()]
@@ -91,6 +97,7 @@ def already_scanned(osis):
         return False
 
 def load_student_data():
+    """Parse student data for names and ids"""
     if not os.path.exists("STUDENTS.csv"):
         display.add_message("Downloading student data...", color=display.YELLOW)
         dump_csv(out="STUDENTS.csv")
@@ -103,6 +110,7 @@ def load_student_data():
         STUDENT_DATA[name] = int(_id)
 
 def menu():
+    """Display the available menu options"""
     if OFFLINE:
         color = display.RED
     else:
@@ -121,11 +129,12 @@ def menu():
     display.add_message("11) Upload all failed ids", color=color)
     display.add_message("12) Get percentage of meetings attended by a student", color=color)
     display.add_message("13) Go online")
-    display.add_message("14) Exit\n")
+    display.add_message("14) Exit")
     choice = display.get_number(prompt="What would you like to do?> ")
     return choice
 
 def scan():
+    """Retrieve ids and send them to the server"""
     load_student_data()
     set_log_names()
     display.add_message("Enter \"back\" to go back", color=display.YELLOW)
@@ -181,6 +190,15 @@ def scan():
         thread.start()
 
 def handle_response(response, out=OUTPUT_FILE, save=False):
+    """
+    Handle the response from the server
+
+    Params:
+        response: Response object to handle from the server
+        out: File to write to (default is OUTUT_FILE)
+        save: Whether or not to write the response to `out`
+    """
+
     if len(response) == 0:
         display.add_message("ERROR: Could not contact server", color=display.RED)
     elif "ERROR" in response:
@@ -195,10 +213,17 @@ def handle_response(response, out=OUTPUT_FILE, save=False):
             display.add_message(response, color=display.GREEN)
 
 def dump_data(out=OUTPUT_FILE):
+    """
+    Dump all data
+
+    Params:
+        out: File to write to (default is OUTUT_FILE)
+    """
     response = send_request("/dump", data={})
     handle_response(response, out=out, save=True)
 
 def dump_day(month, day, year):
+    """Dump the attendance for a specific day"""
     data = {
         "month": month,
         "day": day,
@@ -208,10 +233,12 @@ def dump_day(month, day, year):
     handle_response(response, out=OUTPUT_FILE, save=True)
 
 def dump_today():
+    """Dump the attendance for today"""
     today = datetime.datetime.now()
     dump_day(today.month, today.day, today.year)
 
 def dump_student(osis):
+    """Dump the attendance for a student"""
     data = {
         "id": osis
     }
@@ -219,6 +246,7 @@ def dump_student(osis):
     handle_response(response, out="%s.log" % osis, save=True)
 
 def delete_date(osis, month, day, year):
+    """Delete attendance for a student on a specific day"""
     data = {
         "month": month,
         "day": day,
@@ -229,6 +257,14 @@ def delete_date(osis, month, day, year):
     handle_response(response)
 
 def dump_csv(month=None, out=OUTPUT_FILE + ".csv"):
+    """
+    Dump the attendance in csv format
+
+    Params:
+        month: If specified, only that month's data is returned. Otherwise,
+               all the data is returned.
+        out: File to write the data to (default is OUTPUT_FILE.csv)
+    """
     data = {}
     if month:
         data["month"] = month
@@ -236,10 +272,12 @@ def dump_csv(month=None, out=OUTPUT_FILE + ".csv"):
     handle_response(response, out=out, save=True)
 
 def drop_database():
+    """Deletes attendance data on the server"""
     response = send_request("/dropdb", {})
     handle_response(response)
 
 def post_osis(osis):
+    """Send id to the server for attendance"""
     if OFFLINE:
         append_log(osis, LOG_FAILED)
         return
@@ -262,6 +300,7 @@ def post_osis(osis):
         upload_failed_ids(LOG)
 
 def upload_failed_ids(log):
+    """Upload the failed ids from a single log to the server"""
     failed_log = log + ".FAILED"
     failed_log_lock = failed_log + ".lock"
     if os.path.exists(failed_log_lock):
@@ -302,6 +341,11 @@ def upload_failed_ids(log):
         os.remove(failed_log_lock)
 
 def upload_all_failed_ids():
+    """
+    Find all failed ids and send them to the server
+
+    Failed logs have the .FAILED prefix (ex: 01-01-1970.log.FAILED)
+    """
     logs = glob.glob(LOG_DIR + "*.FAILED")
     if len(logs) == 0:
         display.add_message("There are no pending IDs", color=display.YELLOW)
@@ -313,6 +357,7 @@ def upload_all_failed_ids():
         upload_failed_ids(log)
 
 def get_student_percentage(osis):
+    """Get the percentage of meetings attended by a student"""
     data = {
         "id": osis
     }
@@ -320,6 +365,7 @@ def get_student_percentage(osis):
     handle_response(response)
 
 def send_request(path, data):
+    """Send a request to the server"""
     if ADMIN_EMAIL and ADMIN_PASSWORD:
         data["email"] = ADMIN_EMAIL
         data["pass"] = ADMIN_PASSWORD
@@ -330,6 +376,7 @@ def send_request(path, data):
     return response.text.strip()
 
 def main():
+    """Main function to run"""
     global OFFLINE, MONTH, DAY, YEAR
     while True:
         try:
@@ -392,21 +439,19 @@ def main():
                 get_student_percentage(osis)
             elif choice == 13:
                 if OFFLINE:
-                    login()
-                    if ADMIN_PASSWORD:
+                    if login():
                         OFFLINE = False
                 else:
                     display.add_message("You are already online", color=display.YELLOW)
             elif choice == 14:
                 return
             elif OFFLINE:
-                options = "You are currently in offline mode. available options are:\n\n"
-                options += "1)  Take attendance for today\n"
-                options += "2)  Take attendance for a specific day\n"
-                options += "13) Go online\n"
-                options += "14) Exit\n\n"
-                options += "For more functionality, re-run the program or choose option 13\n"
-                display.add_message(options, color=display.YELLOW)
+                display.add_message("You are currently in offline mode. available options are:", color=display.YELLOW)
+                display.add_message("1)  Take attendance for today", color=display.YELLOW)
+                display.add_message("2)  Take attendance for a specific day", color=display.YELLOW)
+                display.add_message("13) Go online", color=display.YELLOW)
+                display.add_message("14) Exit", color=display.YELLOW)
+                display.add_message("For more functionality, re-run the program or choose option 13", color=display.YELLOW)
             else:
                 display.add_message("Invalid choice.", color=display.RED)
         except KeyboardInterrupt:
