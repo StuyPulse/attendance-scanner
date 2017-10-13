@@ -4,7 +4,7 @@ Run the scanner by executing `./scanner.sh`
 
 An optional `--offline` flag can be passed to the scanner to run it without an Internet connection.
 
-Alternatively, an experimental Python version of the scanner is available (`scanner.py`) with the same features. Please note that there's a bug that causes the program to crash if the terminal window is resized.
+Alternatively, an experimental Python version of the scanner is available (`scanner.py`) with the same features.
 
 ## Setting up a local development environment
 #### Installing the SDK
