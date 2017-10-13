@@ -11,7 +11,7 @@ Alternatively, an experimental Python version of the scanner is available (`scan
 1) Download and install the [Google App Engine SDK for Python](https://cloud.google.com/appengine/docs/standard/python/download)
 #### Install dependencies
 1) Install python-pip with `sudo apt-get install python-pip`
-2) Install all dependencies by running `sudo pip install -r google-appengine/requirements.txt`
+2) Install all dependencies by running `mkdir google-appengine/libs; pip install -t google-appengine/libs -r google-appengine/requirements.txt`
 #### Running the development web server
 1) Run `dev_appserver.py google-appengine/`
 2) Go to [localhost:8080](http://localhost:8080) in a browser
