@@ -27,7 +27,7 @@ def get_osis_data():
             if len(str(student_id)) != 9:
                 continue
             name = "%s %s" % (row[col_first_name], row[col_last_name])
-            osis_data[int(student_id)] = {'Name': name, "ID": row[col_osis]}
+            osis_data[int(student_id)] = name
         return osis_data
     except urllib2.URLError, e:
         logging.error(e)
@@ -45,7 +45,7 @@ def dump_data():
     for student in students.iter():
         id = student.get_id()
         if id in osis_data:
-            retStr += "Name: " + osis_data[id]['Name'] + "\n"
+            retStr += "Name: " + osis_data[id] + "\n"
         retStr += "ID: %s\n%s\n\n" % (student.get_id(), student.get_attendance())
     return retStr
 
@@ -91,7 +91,7 @@ def get_csv(dates):
         id = int(student.get_id())
         retStr += "%s," % id
         if id in osis_data:
-            retStr += osis_data[id]['Name'] + ","
+            retStr += osis_data[id] + ","
         else:
             retStr += ","
         for i in range(numDates):

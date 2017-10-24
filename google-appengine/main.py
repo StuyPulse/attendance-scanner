@@ -168,6 +168,15 @@ def csv_dump():
 def dropdb():
     return students.drop_database()
 
+@app.route("/importcsv", methods=['GET', 'POST'])
+@authenticate
+def importcsv():
+    osis_data = students.get_osis_data()
+    student_csv = "osis, name\n"
+    for osis in osis_data:
+            student_csv += str(osis) + "," + osis_data[osis] + "\n"
+    return student_csv
+
 @app.route("/webconsole", methods=['GET', 'POST'])
 @authenticate
 def webconsole():
@@ -190,7 +199,7 @@ def webconsole():
                     retStr += "<td>%s</td>" % student._key.id()
                     id = int(student.get_id())
                     if id in osis_data:
-                        retStr += "<td>%s</td>" % osis_data[id]['Name']
+                        retStr += "<td>%s</td>" % osis_data[id]
                     else:
                         retStr += "<td></td>"
                     retStr += "<td>%s</td>" % student.get_attendance()

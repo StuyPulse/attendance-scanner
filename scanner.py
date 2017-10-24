@@ -103,10 +103,9 @@ def already_scanned(osis):
 
 def load_student_data():
     """Parse student data for names and ids"""
-    if not os.path.exists("STUDENTS.csv"):
-        display.add_message("Downloading student data...", color=display.YELLOW)
-        dump_csv(out="STUDENTS.csv")
-
+    display.add_message("Downloading student data...", color=display.YELLOW)
+    osis_data = send_request("/importcsv", data={})
+    handle_response(osis_data, out="STUDENTS.csv", save=True)
     csv_reader = csv.reader(open("STUDENTS.csv", "r"))
     csv_reader.next()
     for row in csv_reader:
