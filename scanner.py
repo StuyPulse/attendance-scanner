@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import atexit
 import csv
@@ -106,12 +106,13 @@ def load_student_data():
     display.add_message("Downloading student data...", color=display.YELLOW)
     osis_data = send_request("/importcsv", data={})
     handle_response(osis_data, out="STUDENTS.csv", save=True)
-    csv_reader = csv.reader(open("STUDENTS.csv", "r"))
-    csv_reader.next()
-    for row in csv_reader:
-        _id = row[0]
-        name = row[1]
-        STUDENT_DATA[name] = int(_id)
+    with open("STUDENTS.csv", "r") as csvfile:
+        next(csvfile)
+        csv_reader = csv.reader(csvfile)
+        for row in csv_reader:
+            _id = row[0]
+            name = row[1]
+            STUDENT_DATA[name] = int(_id)
 
 def menu():
     """Display the available menu options"""
@@ -163,7 +164,7 @@ def scan():
                 return
 
             # Scan by name
-            candidates = [(name, osis) for name, osis in STUDENT_DATA.iteritems() if name.lower().startswith(_input)]
+            candidates = [(name, osis) for name, osis in STUDENT_DATA.items() if name.lower().startswith(_input)]
             num_candidates = len(candidates)
             if num_candidates == 0:
                 display.add_message("Student not found", color=display.RED)
