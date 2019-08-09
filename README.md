@@ -21,4 +21,5 @@ Alternatively, an experimental Python version of the scanner is available (`scan
 #### Create an administrator
 Visit `localhost:8080/admin/create_admin` to create an administrator
 #### Deploying to Google App Engine
-Run `appcfg.py update google-appengine/`
+1) If this is the first time you're deploying, run 'gcloud config set project stuypulse-attendance'
+2) Otherwise, just run 'gcloud app deploy'
