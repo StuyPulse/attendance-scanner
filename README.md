@@ -1,3 +1,10 @@
+# Updating the STUDENTS.csv
+
+To add new students to the attendance scanner, you must..
+1) Get the URL of the CSV contact form. Instead of /edit at the end of the link, replace it with /export?format=csv
+2) Sign into the [admin attendance settings](stuypulse-attendance.appspot.com/admin/settings)
+3) Replace the URL with the URL found at Step 1.
+
 # Attendance ID Scanner
 
 Run the scanner by executing `./scanner.sh`
