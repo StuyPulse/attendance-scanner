@@ -20,8 +20,10 @@ Alternatively, an experimental Python version of the scanner is available (`scan
 1) Install python-pip with `sudo apt-get install python-pip`
 2) Install all dependencies by running `mkdir google-appengine/libs; pip install -t google-appengine/libs -r google-appengine/requirements.txt`
 #### Running the development web server
-1) Run `dev_appserver.py google-appengine/`
-2) Go to [localhost:8080](http://localhost:8080) in a browser
+1) You will need a google web service client account, follow the instructions here: [Create a Google Service account](https://cloud.google.com/docs/authentication/getting-started)
+2) Set your environment variables, by running `export GOOGLE_APPLICATION_CREDENTIALS="/path/to/credentials/credentials.json; export FLASK_APP=main.py`
+3) Run `flask run`
+4) Go to [localhost:5000](http://localhost:5000) in a browser
 #### Configure the scanner
 1) Open `scanner.sh` and change the line `SERVER_ADDR=https://stuypulse-attendance.appspot.com/` to `SERVER_ADDR=localhost:8080`
 2) For the experimental Python version, change the contents of the `SERVER_ADDRESS` variable to `localhost:8080`
