@@ -1,7 +1,7 @@
 from flask import Flask, request, redirect, url_for, render_template
 from functools import wraps
 from werkzeug.security import check_password_hash
-from google.appengine.ext import ndb
+from google.cloud import ndb
 from models import Administrator, Student
 
 import students
@@ -15,15 +15,17 @@ app.config['DEBUG'] = False
 def authenticate(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if request.method == "POST":
-            email = request.form.get("email")
-            password = request.form.get("pass")
-            admin = ndb.Key(Administrator, email).get()
-            if not admin:
-                return "ERROR: Invalid credentials\n"
-            if not check_password_hash(admin.password, password):
-                return "ERROR: Invalid credentials\n"
-        return f(*args, **kwargs)
+        client = ndb.Client()
+        with client.context() as context:
+            if request.method == "POST":
+                email = request.form["email"]
+                password = request.form.get("pass") 
+                admin = ndb.Key(Administrator, email).get()
+                if not admin:
+                    return "ERROR: Invalid credentials\n"
+                if not check_password_hash(admin.password, password):
+                    return "ERROR: Invalid credentials\n"
+            return f(*args, **kwargs)
     return wrapper
 
 @app.route("/", methods=['GET', 'POST'])
@@ -181,11 +183,11 @@ def importcsv():
 @authenticate
 def webconsole():
     if request.method == 'POST':
-        if request.form.has_key('student') and\
-            request.form.has_key('month') and \
-            request.form.has_key('day') and \
-            request.form.has_key('year') and \
-            request.form.has_key('action'):
+        if request.form.get('student') or \
+            request.form.get('month') or \
+            request.form.get('day') or \
+            request.form.get('year') or \
+            request.form.get('action'):
 
             action = request.form['action']
             if action == 'dump':
@@ -229,7 +231,7 @@ def webconsole():
                 retStr += "<br>".join(student.get_attendance())
                 return retStr
         else:
-            return "ERROR: Malformed request"
+            return f"{request.form.get('student')} ERROR: Malformed request"
     else:
         return render_template("login.html")
 
