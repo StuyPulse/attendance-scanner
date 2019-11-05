@@ -5,5 +5,5 @@
 #
 # Note: The `lib` directory is added to `sys.path` by `appengine_config.py`.
 Flask==1.1.1
-google-cloud-ndb
+google-cloud-ndb==0.1.0
 requests==2.22.0
