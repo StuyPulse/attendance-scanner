@@ -210,6 +210,8 @@ def webconsole():
             elif action == 'csv':
                 dates = students.get_dates()
                 return students.get_csv(dates).replace('\n', '<br/>')
+            elif action == 'day' and request.form['year'] == '':
+                return "ERROR: Invalid Year"
             elif action == 'day':
                 retStr = "Attendance for " + request.form['month'] + "/" +\
                             request.form['day'] + "/" + request.form['year'] + "<br/>"
@@ -231,7 +233,7 @@ def webconsole():
                 retStr += "<br>".join(student.get_attendance())
                 return retStr
         else:
-            return f"{request.form.get('student')} ERROR: Malformed request"
+            return "ERROR: Malformed request"
     else:
         return render_template("login.html")
 
