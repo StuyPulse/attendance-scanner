@@ -32,12 +32,12 @@ def authenticate(f):
 @authenticate
 def index():
     if request.method == 'POST':
-        if request.form.has_key('month') and\
-            request.form.has_key('day') and\
-            request.form.has_key('year'):
+        if 'month' in request.form and\
+            'day' in request.form and\
+            'year' in request.form:
 
             # If ID is supplied, update attendance for ID
-            if request.form.has_key('id'):
+            if 'id' in request.form:
                 id = request.form["id"]
                 try:
                     int(id)
@@ -73,8 +73,8 @@ def dump():
 @app.route("/day", methods=['POST'])
 @authenticate
 def day():
-    if request.form.has_key('day') and request.form.has_key('month')\
-    and request.form.has_key('year'):
+    if 'day' in request.form and 'month' in request.form\
+    and 'year' in request.form:
         try:
             day = int(request.form["day"])
             month = int(request.form["month"])
@@ -89,7 +89,7 @@ def day():
 @app.route("/student", methods=['POST'])
 @authenticate
 def student():
-    if request.form.has_key('id'):
+    if 'id' in request.form:
         id = request.form["id"]
         try:
             int(id)
@@ -106,10 +106,10 @@ def student():
 @app.route("/delete", methods=['POST'])
 @authenticate
 def delete():
-    if request.form.has_key('month') and\
-        request.form.has_key('day') and\
-        request.form.has_key('year') and\
-        request.form.has_key('id'):
+    if 'month' in request.form and\
+        'day' in request.form and\
+        'year' in request.form and\
+        'id' in request.form:
         id = request.form["id"]
         try:
             int(id)
@@ -135,7 +135,7 @@ def delete():
 @app.route("/percent", methods=["POST"])
 @authenticate
 def percent():
-    if request.form.has_key("id"):
+    if "id" in request.form:
         id = request.form["id"]
         try:
             int(id)
@@ -162,7 +162,7 @@ def csv_dump():
         except ValueError:
             return "ERROR: Month must be a number\n"
 
-        dates = filter(lambda d: d.month == month, dates)
+        dates = [d for d in dates if d.month == month]
     return students.get_csv(dates)
 
 @app.route("/dropdb", methods=['POST'])
@@ -183,12 +183,7 @@ def importcsv():
 @authenticate
 def webconsole():
     if request.method == 'POST':
-        if request.form.get('student') or \
-            request.form.get('month') or \
-            request.form.get('day') or \
-            request.form.get('year') or \
-            request.form.get('action'):
-
+        if request.form.get('action'):
             action = request.form['action']
             if action == 'dump':
                 osis_data = students.get_osis_data()

@@ -6,7 +6,7 @@ import requests
 import csv
 import logging
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 def get_osis_data():
     config = ndb.Key(Settings, 'config').get()
