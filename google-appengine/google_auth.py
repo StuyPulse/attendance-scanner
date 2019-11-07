@@ -90,7 +90,7 @@ def google_auth_redirect():
 
     flask.session[AUTH_TOKEN_KEY] = oauth2_tokens
 
-    return flask.redirect(flask.url_for('admin'))
+    return flask.redirect(flask.url_for('admin.admin'))
 
 @app.route('/admin/google/logout')
 @no_cache

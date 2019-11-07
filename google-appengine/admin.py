@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, render_template
+from flask import Blueprint, request, redirect, url_for, render_template
 from google.cloud import ndb
 from werkzeug.security import generate_password_hash
 from models import *
@@ -8,12 +8,8 @@ import googleapiclient.discovery
 import os
 import requests
 
-app = Flask(__name__)
-app.config['DEBUG'] = True
-
+app = Blueprint('admin', __name__)
 app.secret_key = os.environ.get("FN_FLASK_SECRET_KEY", default=False)
-
-app.register_blueprint(google_auth.app)
 
 @app.route("/admin/create_admin", methods=['GET', 'POST'])
 def create_admin():

@@ -3,12 +3,19 @@ from functools import wraps
 from werkzeug.security import check_password_hash
 from google.cloud import ndb
 from models import Administrator, Student
+import os
 
 import students
+import admin
+import google_auth
 
 app = Flask(__name__)
 app.config['DEBUG'] = False
 
+app.register_blueprint(admin.app)
+app.register_blueprint(google_auth.app)
+
+app.secret_key = admin.app.secret_key
 # Note: We don't need to call run() since our application is embedded within
 # the App Engine WSGI application server.
 
