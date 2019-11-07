@@ -8,5 +8,5 @@ Flask==1.1.1
 google-cloud-ndb==0.1.0
 requests==2.22.0
 authlib==0.11
-google-api-python-client
-google-auth
+google-api-python-client==1.7.11
+google-auth==1.6.3
