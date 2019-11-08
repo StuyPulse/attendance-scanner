@@ -3,7 +3,7 @@
 <a href="{{ logout_url }}">Logout</a>
 <h1 class="center-text">Hello {{ user_name }}</h1>
 <h1 class="center-text">Create new admin</h1>
-<form class="center-all" method="POST" action="{{ url_for('create_admin') }}">
+<form class="center-all" method="POST" action="{{ url_for('admin.create_admin') }}">
     <label for="email">New Admin Email:</label>
     <br/>
     <br/>

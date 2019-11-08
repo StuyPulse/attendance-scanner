@@ -1,41 +1,50 @@
 from flask import Flask, request, redirect, url_for, render_template
 from functools import wraps
 from werkzeug.security import check_password_hash
-from google.appengine.ext import ndb
+from google.cloud import ndb
 from models import Administrator, Student
+import os
 
 import students
+import admin
+import google_auth
 
 app = Flask(__name__)
 app.config['DEBUG'] = False
 
+app.register_blueprint(admin.app)
+app.register_blueprint(google_auth.app)
+
+app.secret_key = admin.app.secret_key
 # Note: We don't need to call run() since our application is embedded within
 # the App Engine WSGI application server.
 
 def authenticate(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if request.method == "POST":
-            email = request.form.get("email")
-            password = request.form.get("pass")
-            admin = ndb.Key(Administrator, email).get()
-            if not admin:
-                return "ERROR: Invalid credentials\n"
-            if not check_password_hash(admin.password, password):
-                return "ERROR: Invalid credentials\n"
-        return f(*args, **kwargs)
+        client = ndb.Client()
+        with client.context() as context:
+            if request.method == "POST":
+                email = request.form["email"]
+                password = request.form.get("pass") 
+                admin = ndb.Key(Administrator, email).get()
+                if not admin:
+                    return "ERROR: Invalid credentials\n"
+                if not check_password_hash(admin.password, password):
+                    return "ERROR: Invalid credentials\n"
+            return f(*args, **kwargs)
     return wrapper
 
 @app.route("/", methods=['GET', 'POST'])
 @authenticate
 def index():
     if request.method == 'POST':
-        if request.form.has_key('month') and\
-            request.form.has_key('day') and\
-            request.form.has_key('year'):
+        if 'month' in request.form and\
+            'day' in request.form and\
+            'year' in request.form:
 
             # If ID is supplied, update attendance for ID
-            if request.form.has_key('id'):
+            if 'id' in request.form:
                 id = request.form["id"]
                 try:
                     int(id)
@@ -71,8 +80,8 @@ def dump():
 @app.route("/day", methods=['POST'])
 @authenticate
 def day():
-    if request.form.has_key('day') and request.form.has_key('month')\
-    and request.form.has_key('year'):
+    if 'day' in request.form and 'month' in request.form\
+    and 'year' in request.form:
         try:
             day = int(request.form["day"])
             month = int(request.form["month"])
@@ -87,7 +96,7 @@ def day():
 @app.route("/student", methods=['POST'])
 @authenticate
 def student():
-    if request.form.has_key('id'):
+    if 'id' in request.form:
         id = request.form["id"]
         try:
             int(id)
@@ -104,10 +113,10 @@ def student():
 @app.route("/delete", methods=['POST'])
 @authenticate
 def delete():
-    if request.form.has_key('month') and\
-        request.form.has_key('day') and\
-        request.form.has_key('year') and\
-        request.form.has_key('id'):
+    if 'month' in request.form and\
+        'day' in request.form and\
+        'year' in request.form and\
+        'id' in request.form:
         id = request.form["id"]
         try:
             int(id)
@@ -133,7 +142,7 @@ def delete():
 @app.route("/percent", methods=["POST"])
 @authenticate
 def percent():
-    if request.form.has_key("id"):
+    if "id" in request.form:
         id = request.form["id"]
         try:
             int(id)
@@ -160,7 +169,7 @@ def csv_dump():
         except ValueError:
             return "ERROR: Month must be a number\n"
 
-        dates = filter(lambda d: d.month == month, dates)
+        dates = [d for d in dates if d.month == month]
     return students.get_csv(dates)
 
 @app.route("/dropdb", methods=['POST'])
@@ -181,12 +190,7 @@ def importcsv():
 @authenticate
 def webconsole():
     if request.method == 'POST':
-        if request.form.has_key('student') and\
-            request.form.has_key('month') and \
-            request.form.has_key('day') and \
-            request.form.has_key('year') and \
-            request.form.has_key('action'):
-
+        if request.form.get('action'):
             action = request.form['action']
             if action == 'dump':
                 osis_data = students.get_osis_data()
@@ -208,6 +212,8 @@ def webconsole():
             elif action == 'csv':
                 dates = students.get_dates()
                 return students.get_csv(dates).replace('\n', '<br/>')
+            elif action == 'day' and request.form['year'] == '':
+                return "ERROR: Invalid Year"
             elif action == 'day':
                 retStr = "Attendance for " + request.form['month'] + "/" +\
                             request.form['day'] + "/" + request.form['year'] + "<br/>"

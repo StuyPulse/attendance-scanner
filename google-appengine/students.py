@@ -1,11 +1,12 @@
-from google.appengine.ext import ndb
-from httplib import HTTPException
+from google.cloud import ndb
+from http.client import HTTPException
 from models import Settings, Student
+import requests
 
 import csv
 import logging
 import re
-import urllib2
+import urllib.request, urllib.parse, urllib.error
 
 def get_osis_data():
     config = ndb.Key(Settings, 'config').get()
@@ -13,9 +14,10 @@ def get_osis_data():
         return "ERROR: You need to specify the CSV file of the Google Spreadsheet with OSIS"
     url = config.osis_url
     try:
-        result = urllib2.urlopen(url)
-        csv_reader = csv.reader(result)
-        osis_meta = csv_reader.next() # Gets the first line in the OSIS Spreadsheet with headers
+        result = requests.get(url)
+        decoded_content = result.content.decode('utf-8')
+        csv_reader = csv.reader(decoded_content.splitlines(), delimiter=',')
+        osis_meta = next(csv_reader) # Gets the first line in the OSIS Spreadsheet with headers
         col_last_name = osis_meta.index("Last Name")
         col_first_name = osis_meta.index("First Name")
         col_osis = osis_meta.index("OSIS")
@@ -29,10 +31,10 @@ def get_osis_data():
             name = "%s %s" % (row[col_first_name], row[col_last_name])
             osis_data[int(student_id)] = name
         return osis_data
-    except urllib2.URLError, e:
+    except urllib.error.URLError as e:
         logging.error(e)
         return "ERROR: URL for Google Spreadsheet with OSIS numbers is NOT VALID"
-    except HTTPException, e:
+    except HTTPException as e:
         logging.error(e)
         return "ERROR: Could not fetch Google Spreadsheet with OSIS numbers"
 
