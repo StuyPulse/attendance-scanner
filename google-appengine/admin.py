@@ -9,7 +9,7 @@ import os
 import requests
 
 app = Blueprint('admin', __name__)
-app.secret_key = os.environ.get("FN_FLASK_SECRET_KEY", default=False)
+app.secret_key = Settings.get("FN_FLASK_SECRET_KEY")
 
 @app.route("/admin/create_admin", methods=['GET', 'POST'])
 def create_admin():
