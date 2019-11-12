@@ -9,10 +9,10 @@ import re
 import urllib.request, urllib.parse, urllib.error
 
 def get_osis_data():
-    config = ndb.Key(Settings, 'config').get()
+    config = Settings.get('config')
     if not config:
         return "ERROR: You need to specify the CSV file of the Google Spreadsheet with OSIS"
-    url = config.osis_url
+    url = config
     try:
         result = requests.get(url)
         decoded_content = result.content.decode('utf-8')

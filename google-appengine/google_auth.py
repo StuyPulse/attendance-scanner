@@ -44,7 +44,7 @@ def get_user_info():
             'oauth2', 'v2',
             credentials=credentials)
     if '@stuypulse.com' not in oauth2_client.userinfo().get().execute()['email']:
-        raise Exception("Invalid Email. Must log in with Stuypulse Account")
+        raise Exception("User must use a stuypulse.com email")
     return oauth2_client.userinfo().get().execute()
 
 def no_cache(view):

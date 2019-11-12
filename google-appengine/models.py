@@ -57,3 +57,18 @@ class Settings(ndb.Model):
             'its value in that record\'s value field.') % (name, name))
         return retval.value
 
+  @staticmethod
+  def push(name, value):
+    client = ndb.Client()
+    with client.context() as context:
+        retval = Settings.query(Settings.name == name).get()
+        if not retval:
+            retval = Settings()
+            retval.name = name
+            retval.value = value
+            retval.put()
+        else:
+            retval.value = value
+            retval.put(retval.value)
+        
+

@@ -13,21 +13,24 @@ app.secret_key = Settings.get("FN_FLASK_SECRET_KEY")
 
 @app.route("/admin/create_admin", methods=['GET', 'POST'])
 def create_admin():
-    if request.method == 'POST':
-        client = ndb.Client()
-        with client.context() as context:
-            if request.form.get('email') and request.form.get('pass'):
-                admin = Administrator(id=request.form['email'])
-                admin.password = generate_password_hash(request.form['pass'])
-                admin.put()
-                return "SUCCESS: Administrator " + request.form['email'] + " was created successfully.\n"
-            else:
-                return "ERROR: Malformed request\n"
+    if google_auth.is_logged_in():
+        if request.method == 'POST':
+            client = ndb.Client()
+            with client.context() as context:
+                if request.form.get('email') and request.form.get('pass'):
+                    admin = Administrator(id=request.form['email'])
+                    admin.password = generate_password_hash(request.form['pass'])
+                    admin.put()
+                    return "SUCCESS: Administrator " + request.form['email'] + " was created successfully.\n"
+                else:
+                    return "ERROR: Malformed request\n"
+        else:
+            info = google_auth.get_user_info()
+            user_name = info['given_name']
+            logout_url= "/admin/google/logout"
+            return render_template('create_admin.html', user_name=user_name, logout_url=logout_url)
     else:
-        info = google_auth.get_user_info()
-        user_name = info['given_name']
-        logout_url= "/admin/google/logout"
-        return render_template('create_admin.html', user_name=user_name, logout_url=logout_url)
+        return redirect(url_for('google_auth.login'))
 
 @app.route("/admin", methods=['GET', 'POST'])
 def admin():
@@ -44,13 +47,10 @@ def admin_settings():
         user_name = info['given_name']
         logout_url="/admin/google/logout"
         client = ndb.Client()
-        with client.context() as context:
-            config = ndb.Key(Settings, 'config').get()
-            if not config:
-                config = Settings(id='config')
-            if request.method == 'POST':
-                config.osis_url = request.form['osis-url']
-                config.put()
+        config = Settings.get('config')
+        if request.method == 'POST':
+            Settings.push('config', request.form['osis-url'])
+            config = Settings.get('config')
         return render_template('settings.html', config=config, user_name=user_name, logout_url=logout_url)
     else:
         return redirect(url_for('google_auth.login'))
