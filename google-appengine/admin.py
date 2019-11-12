@@ -25,7 +25,7 @@ def create_admin():
                 return "ERROR: Malformed request\n"
     else:
         info = google_auth.get_user_info()
-        user_name = info['email']
+        user_name = info['given_name']
         logout_url= "/admin/google/logout"
         return render_template('create_admin.html', user_name=user_name, logout_url=logout_url)
 
@@ -39,15 +39,18 @@ def admin():
 
 @app.route("/admin/settings", methods=['GET', 'POST'])
 def admin_settings():
-    info = google_auth.get_user_info()
-    user_name = info['email']
-    logout_url="/admin/google/logout"
-    client = ndb.Client()
-    with client.context() as context:
-        config = ndb.Key(Settings, 'config').get()
-        if not config:
-            config = Settings(id='config')
-        if request.method == 'POST':
-            config.osis_url = request.form['osis-url']
-            config.put()
-    return render_template('settings.html', config=config, user_name=user_name, logout_url=logout_url)
+    if google_auth.is_logged_in():
+        info = google_auth.get_user_info()
+        user_name = info['given_name']
+        logout_url="/admin/google/logout"
+        client = ndb.Client()
+        with client.context() as context:
+            config = ndb.Key(Settings, 'config').get()
+            if not config:
+                config = Settings(id='config')
+            if request.method == 'POST':
+                config.osis_url = request.form['osis-url']
+                config.put()
+        return render_template('settings.html', config=config, user_name=user_name, logout_url=logout_url)
+    else:
+        return redirect(url_for('google_auth.login'))
