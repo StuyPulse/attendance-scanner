@@ -4,4 +4,7 @@
 *.log
 
 lib/
+libs/
 *.csv
+
+.gcloudignore
