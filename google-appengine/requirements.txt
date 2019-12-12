@@ -9,6 +9,6 @@ google-cloud-ndb==0.2.0
 requests==2.22.0
 authlib==0.13
 google-api-python-client==1.7.11
-google-auth==1.7.1
+google-auth==1.8.2
 Jinja2==2.10.3
 markupsafe==1.1.1
