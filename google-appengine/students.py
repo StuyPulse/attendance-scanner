@@ -39,9 +39,6 @@ def get_osis_data():
     except HTTPException as e:
         logging.error(e)
         return "ERROR: Could not fetch Google Spreadsheet with OSIS numbers"
-    #except ValueError as e:
-    #    logging.error(e)
-    #    print( f"osis_meta: {list(osis_meta)}")
 
 def dump_data():
     osis_data = get_osis_data()

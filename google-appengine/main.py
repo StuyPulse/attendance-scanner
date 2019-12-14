@@ -96,9 +96,9 @@ def day():
     if 'day' in request.form and 'month' in request.form\
     and 'year' in request.form:
         try:
-            day = int(request.form["day_day"])
-            month = int(request.form["day_month"])
-            year = int(request.form["day_year"])
+            day = int(request.form["day"])
+            month = int(request.form["month"])
+            year = int(request.form["year"])
         except ValueError:
             return "ERROR: Invalid date\n"
 
