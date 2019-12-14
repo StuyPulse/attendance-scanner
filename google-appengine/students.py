@@ -16,8 +16,10 @@ def get_osis_data():
     try:
         result = requests.get(url)
         decoded_content = result.content.decode('utf-8')
-        csv_reader = csv.reader(decoded_content.splitlines(), delimiter=',')
-        osis_meta = next(csv_reader) # Gets the first line in the OSIS Spreadsheet with headers
+        csv_reader = "".join(decoded_content).split("\r\n")
+        for i in range(len(csv_reader)):
+            csv_reader[i] = csv_reader[i].split(",")
+        osis_meta = csv_reader[0] # Gets the first line in the OSIS Spreadsheet with headers
         col_last_name = osis_meta.index("Last Name")
         col_first_name = osis_meta.index("First Name")
         col_osis = osis_meta.index("OSIS")
@@ -37,6 +39,9 @@ def get_osis_data():
     except HTTPException as e:
         logging.error(e)
         return "ERROR: Could not fetch Google Spreadsheet with OSIS numbers"
+    #except ValueError as e:
+    #    logging.error(e)
+    #    print( f"osis_meta: {list(osis_meta)}")
 
 def dump_data():
     osis_data = get_osis_data()
@@ -69,6 +74,15 @@ def get_dates():
     dates = []
     for student in students.iter():
         for date in student.attendance_dates:
+            if date not in dates:
+                dates.append(date)
+    return dates
+
+def get_month(month, year):
+    students = Student.query()
+    dates = []
+    for student in students.iter():
+        for date in student.get_month(month, year):
             if date not in dates:
                 dates.append(date)
     return dates

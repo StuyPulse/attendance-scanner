@@ -32,6 +32,13 @@ class Student(ndb.Model):
             attendance.append(date.strftime("%-m/%-d/%Y"))
         return attendance
 
+    def get_month(self, month, year):
+        attendance = []
+        for date in self.attendance_dates:
+            if (date.month == month and date.year == year):
+                attendance.append(date)
+        return attendance
+
 class Administrator(ndb.Model):
     password = ndb.StringProperty()
 

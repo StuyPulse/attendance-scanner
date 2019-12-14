@@ -77,15 +77,28 @@ def index():
 def dump():
     return students.dump_data()
 
+@app.route("/month", methods=['POST'])
+@authenticate
+def month():
+    if 'month' in request.form and 'year' in request.form:
+        try:
+            month = int(request.form["month"])
+            year = int(request.form["year"])
+        except ValueError:
+            return "ERROR: Invalid Date"
+        return students.get_month(month, year)
+    else:
+        return "ERROR: Malformed request\n"
+
 @app.route("/day", methods=['POST'])
 @authenticate
 def day():
     if 'day' in request.form and 'month' in request.form\
     and 'year' in request.form:
         try:
-            day = int(request.form["day"])
-            month = int(request.form["month"])
-            year = int(request.form["year"])
+            day = int(request.form["day_day"])
+            month = int(request.form["day_month"])
+            year = int(request.form["day_year"])
         except ValueError:
             return "ERROR: Invalid date\n"
 
@@ -221,6 +234,11 @@ def webconsole():
                                     int(request.form['day']),\
                                     int(request.form['year'])).replace('\n', '<br/>')
                 return retStr
+            elif action == 'month' and request.form['year'] == '':
+                return "ERROR: Invalid Year"
+            elif action == 'month':
+                dates = students.get_month(int(request.form['month']), int(request.form['year']))
+                return students.get_csv(dates).replace('\n', '<br/>')
             elif action == 'student':
                 id = request.form["student"]
                 retStr = "Attendance for " + id + "<br/>"
