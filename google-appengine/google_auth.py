@@ -64,7 +64,7 @@ def login():
             scope=AUTHORIZATION_SCOPE,
             redirect_uri=request.url_root[:-1] + url_for('google_auth.google_auth_redirect'))
 
-    uri, state = my_session.authorization_url(AUTHORIZATION_URL)
+    uri, state = my_session.create_authorization_url(AUTHORIZATION_URL)
 
     session[AUTH_STATE_KEY] = state
     session.permanent = True
