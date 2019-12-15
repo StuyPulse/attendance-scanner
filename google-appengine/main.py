@@ -38,6 +38,7 @@ def authenticate(f):
 @app.route("/", methods=['GET', 'POST'])
 @authenticate
 def index():
+    client = ndb.Client()
     if request.method == 'POST':
         if 'month' in request.form and\
             'day' in request.form and\
@@ -57,8 +58,8 @@ def index():
                     year = int(request.form["year"])
                 except ValueError:
                     return "ERROR: Invalid date\n"
-
-                student = ndb.Key(Student, id).get()
+                with client.context():
+                    student = ndb.Key(Student, id).get()
                 if not student:
                     student = Student(id=id)
                 student.scan(month, day, year)
@@ -109,14 +110,15 @@ def day():
 @app.route("/student", methods=['POST'])
 @authenticate
 def student():
+    client = ndb.Client()
     if 'id' in request.form:
         id = request.form["id"]
         try:
             int(id)
         except ValueError:
             return "ERROR: ID must be a number\n"
-
-        student = ndb.Key(Student, id).get()
+        with client.context():
+            student = ndb.Key(Student, id).get()
         if not student:
             return "ERROR: Student does not exist\n"
         return "\n".join(student.get_attendance())
@@ -126,6 +128,7 @@ def student():
 @app.route("/delete", methods=['POST'])
 @authenticate
 def delete():
+    client = ndb.Client()
     if 'month' in request.form and\
         'day' in request.form and\
         'year' in request.form and\
@@ -142,8 +145,8 @@ def delete():
             year = int(request.form["year"])
         except ValueError:
             return "ERROR: Invalid date\n"
-
-        student = ndb.Key(Student, id).get()
+        with client.context():
+            student = ndb.Key(Student, id).get()
         if student:
             student.delete_date(month, day, year)
         else:
@@ -155,14 +158,15 @@ def delete():
 @app.route("/percent", methods=["POST"])
 @authenticate
 def percent():
+    client = client.context()
     if "id" in request.form:
         id = request.form["id"]
         try:
             int(id)
         except ValueError:
             return "ERROR: ID must be a number\n"
-
-        student = ndb.Key(Student, id).get()
+        with client.context():
+            student = ndb.Key(Student, id).get()
         if student:
             return str(students.get_percentage(student))
         else:
