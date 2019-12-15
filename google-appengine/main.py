@@ -158,7 +158,7 @@ def delete():
 @app.route("/percent", methods=["POST"])
 @authenticate
 def percent():
-    client = client.context()
+    client = ndb.Client()
     if "id" in request.form:
         id = request.form["id"]
         try:

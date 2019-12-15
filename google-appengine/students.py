@@ -41,16 +41,18 @@ def get_osis_data():
         return "ERROR: Could not fetch Google Spreadsheet with OSIS numbers"
 
 def dump_data():
+    client = ndb.Client()
     osis_data = get_osis_data()
     if "ERROR" in osis_data:
         return osis_data
     students = Student.query()
     retStr = ""
-    for student in students.iter():
-        id = student.get_id()
-        if id in osis_data:
-            retStr += "Name: " + osis_data[id] + "\n"
-        retStr += "ID: %s\n%s\n\n" % (student.get_id(), student.get_attendance())
+    with client.context():
+        for student in students.iter():
+            id = student.get_id()
+            if id in osis_data:
+                retStr += "Name: " + osis_data[id] + "\n"
+            retStr += "ID: %s\n%s\n\n" % (student.get_id(), student.get_attendance())
     return retStr
 
 def get_day(month, day, year):
@@ -124,8 +126,10 @@ def get_csv(dates):
     return retStr
 
 def drop_database():
+    client = ndb.Client()
     students = Student.query()
     num = students.count()
-    for student in students.iter():
-        student.key.delete()
+    with client.context():
+        for student in students.iter():
+            student.key.delete()
     return "Deleted " + str(num) + " entries.\n"
