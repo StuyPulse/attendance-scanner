@@ -23,16 +23,16 @@ def authenticate(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         client = ndb.Client()
-        with client.context() as context:
-            if request.method == "POST":
-                email = request.form["email"]
-                password = request.form.get("pass") 
+        if request.method == "POST":
+            email = request.form["email"]
+            password = request.form.get("pass") 
+            with client.context() as context:
                 admin = ndb.Key(Administrator, email).get()
-                if not admin:
-                    return "ERROR: Invalid credentials\n"
-                if not check_password_hash(admin.password, password):
-                    return "ERROR: Invalid credentials\n"
-            return f(*args, **kwargs)
+            if not admin:
+                return "ERROR: Invalid credentials\n"
+            if not check_password_hash(admin.password, password):
+                return "ERROR: Invalid credentials\n"
+        return f(*args, **kwargs)
     return wrapper
 
 @app.route("/", methods=['GET', 'POST'])
@@ -202,6 +202,7 @@ def importcsv():
 @app.route("/webconsole", methods=['GET', 'POST'])
 @authenticate
 def webconsole():
+    client = ndb.Client()
     if request.method == 'POST':
         if request.form.get('action'):
             action = request.form['action']
@@ -211,16 +212,17 @@ def webconsole():
                     return osis_data
                 s = Student.query()
                 retStr = "<table><th>ID</th><th>Name</th><th>Dates</th>"
-                for student in s.iter():
-                    retStr += "<tr>"
-                    retStr += "<td>%s</td>" % student._key.id()
-                    id = int(student.get_id())
-                    if id in osis_data:
-                        retStr += "<td>%s</td>" % osis_data[id]
-                    else:
-                        retStr += "<td></td>"
-                    retStr += "<td>%s</td>" % student.get_attendance()
-                    retStr += "</tr>"
+                with client.context() as context:
+                    for student in s.iter():
+                        retStr += "<tr>"
+                        retStr += "<td>%s</td>" % student._key.id()
+                        id = int(student.get_id())
+                        if id in osis_data:
+                            retStr += "<td>%s</td>" % osis_data[id]
+                        else:
+                            retStr += "<td></td>"
+                        retStr += "<td>%s</td>" % student.get_attendance()
+                        retStr += "</tr>"
                 return retStr + "</table"
             elif action == 'csv':
                 dates = students.get_dates()
@@ -246,8 +248,8 @@ def webconsole():
                     int(id)
                 except ValueError:
                     return "ERROR: ID must be a number\n"
-
-                student = ndb.Key(Student, id).get()
+                with client.context() as context:
+                    student = ndb.Key(Student, id).get()
                 if not student:
                     return "ERROR: Student does not exist.\n"
                 retStr += "<br>".join(student.get_attendance())
