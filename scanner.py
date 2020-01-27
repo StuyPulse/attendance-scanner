@@ -134,7 +134,8 @@ def menu():
     display.add_message("11) Upload all failed ids", color=color)
     display.add_message("12) Get percentage of meetings attended by a student", color=color)
     display.add_message("13) Go online")
-    display.add_message("14) Exit")
+    display.add_message("14) Try Reuploading data")
+    display.add_message("15) Exit")
     choice = display.get_number(prompt="What would you like to do?> ")
     return choice
 
@@ -191,7 +192,7 @@ def scan():
             else:
                 display.add_message("Got %s - %d" % (name, osis), color=display.GREEN)
 
-        thread = threading.Thread(target=post_osis, args=[osis])
+        thread = threading.Thread(target=post_osis, args=[osis, MONTH, DAY, YEAR])
         thread.start()
 
 def handle_response(response, out=OUTPUT_FILE, save=False):
@@ -281,7 +282,18 @@ def drop_database():
     response = send_request("/dropdb", {})
     handle_response(response)
 
-def post_osis(osis):
+def upload_data():
+    for f in os.listdir("./logs"):
+        month = f[:2]
+        day = f[3:5]
+        year = f[6:10]
+        display.add_message(month)
+        display.add_message(day)
+        display.add_message(year)
+        for i in open(f"./logs/{f}"):
+            post_osis(int(i), month=month, day=day, year=year)
+        display.add_message("Done!")
+def post_osis(osis, month, day, year):
     """Send id to the server for attendance"""
     if OFFLINE:
         append_log(osis, LOG_FAILED)
@@ -289,11 +301,12 @@ def post_osis(osis):
 
     data = {
         "id": osis,
-        "month": MONTH,
-        "day": DAY,
-        "year": YEAR
+        "month": month,
+        "day": day,
+        "year": year
     }
     response = send_request("/", data)
+    display.add_message(response)
     if len(response) == 0:
         display.add_message("ERROR: Could not contact server", color=display.RED)
         append_log(osis, LOG_FAILED)
@@ -449,13 +462,15 @@ def main():
                 else:
                     display.add_message("You are already online", color=display.YELLOW)
             elif choice == 14:
+                upload_data()
+            elif choice == 15:
                 return
             elif OFFLINE:
                 display.add_message("You are currently in offline mode. available options are:", color=display.YELLOW)
                 display.add_message("1)  Take attendance for today", color=display.YELLOW)
                 display.add_message("2)  Take attendance for a specific day", color=display.YELLOW)
                 display.add_message("13) Go online", color=display.YELLOW)
-                display.add_message("14) Exit", color=display.YELLOW)
+                display.add_message("15) Exit", color=display.YELLOW)
                 display.add_message("For more functionality, re-run the program or choose option 13", color=display.YELLOW)
             else:
                 display.add_message("Invalid choice.", color=display.RED)
