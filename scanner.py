@@ -192,7 +192,7 @@ def scan():
             else:
                 display.add_message("Got %s - %d" % (name, osis), color=display.GREEN)
 
-        thread = threading.Thread(target=post_osis, args=[osis, MONTH, DAY, YEAR])
+        thread = threading.Thread(target=post_osis, args=[osis])
         thread.start()
 
 def handle_response(response, out=OUTPUT_FILE, save=False):
@@ -287,13 +287,20 @@ def upload_data():
         month = f[:2]
         day = f[3:5]
         year = f[6:10]
+        MONTH = month
+        DAY = day
+        YEAR = year
         display.add_message(month)
         display.add_message(day)
         display.add_message(year)
         for i in open(f"./logs/{f}"):
-            post_osis(int(i), month=month, day=day, year=year)
+            post_osis(int(i))
+        today = datetime.datetime.now()
+        MONTH = today.month
+        DAY = today.day
+        YEAR = today.year
         display.add_message("Done!")
-def post_osis(osis, month, day, year):
+def post_osis(osis):
     """Send id to the server for attendance"""
     if OFFLINE:
         append_log(osis, LOG_FAILED)
@@ -301,12 +308,11 @@ def post_osis(osis, month, day, year):
 
     data = {
         "id": osis,
-        "month": month,
-        "day": day,
-        "year": year
+        "month": MONTH,
+        "day": DAY,
+        "year": YEAR
     }
     response = send_request("/", data)
-    display.add_message(response)
     if len(response) == 0:
         display.add_message("ERROR: Could not contact server", color=display.RED)
         append_log(osis, LOG_FAILED)
