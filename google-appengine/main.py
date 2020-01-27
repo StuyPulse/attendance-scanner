@@ -60,9 +60,9 @@ def index():
                     return "ERROR: Invalid date\n"
                 with client.context():
                     student = ndb.Key(Student, id).get()
-                if not student:
-                    student = Student(id=id)
-                student.scan(month, day, year)
+                    if not student:
+                        student = Student(id=id)
+                    student.scan(month, day, year)
 
                 return "SUCCESS: Server received: " + id + "\n"
             # Otherwise, acknowledge successful sign in
