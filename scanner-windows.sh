@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#WARNING: THIS IS NO LONGER SUPPORTED
+
 # Configuration
 VALID_BARCODE_LENGTH=9
 SERVER_ADDR=https://stuypulse-attendance.appspot.com/

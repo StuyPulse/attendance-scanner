@@ -130,12 +130,13 @@ def menu():
     display.add_message("7)  Export all data to CSV", color=color)
     display.add_message("8)  Export data to CSV for a specific month", color=color)
     display.add_message("9)  Delete attendance for a student on a particular day", color=color)
-    display.add_message("10) Drop(delete) all attendance data", color=color)
-    display.add_message("11) Upload all failed ids", color=color)
-    display.add_message("12) Get percentage of meetings attended by a student", color=color)
-    display.add_message("13) Go online")
-    display.add_message("14) Try Reuploading data")
-    display.add_message("15) Exit")
+    display.add_message("10) Delete all attendance data for today", color=color)
+    display.add_message("11) Drop(delete) all attendance data", color=color)
+    display.add_message("12) Upload all failed ids", color=color)
+    display.add_message("13) Get percentage of meetings attended by a student", color=color)
+    display.add_message("14) Go online")
+    display.add_message("15) Try Reuploading data")
+    display.add_message("16) Exit")
     choice = display.get_number(prompt="What would you like to do?> ")
     return choice
 
@@ -243,6 +244,16 @@ def dump_today():
     today = datetime.datetime.now()
     dump_day(today.month, today.day, today.year)
 
+def delete_today(): 
+    data = {
+        "month": MONTH,
+        "day": DAY,
+        "year": YEAR
+    }
+    response = send_request("/deletedate", data)
+    handle_response(response)
+
+
 def dump_student(osis):
     """Dump the attendance for a student"""
     data = {
@@ -287,19 +298,14 @@ def upload_data():
         month = f[:2]
         day = f[3:5]
         year = f[6:10]
-        MONTH = month
-        DAY = day
-        YEAR = year
         display.add_message(month)
         display.add_message(day)
         display.add_message(year)
         for i in open(f"./logs/{f}"):
-            post_osis(int(i))
+            post_osis_bulk(int(i), month, day, year)
         today = datetime.datetime.now()
-        MONTH = today.month
-        DAY = today.day
-        YEAR = today.year
         display.add_message("Done!")
+
 def post_osis(osis):
     """Send id to the server for attendance"""
     if OFFLINE:
@@ -311,6 +317,29 @@ def post_osis(osis):
         "month": MONTH,
         "day": DAY,
         "year": YEAR
+    }
+    response = send_request("/", data)
+    if len(response) == 0:
+        display.add_message("ERROR: Could not contact server", color=display.RED)
+        append_log(osis, LOG_FAILED)
+    elif "ERROR" in response:
+        display.add_message(response, color=display.RED)
+    else:
+        append_log(osis, LOG)
+        # Most recent attempt was successful, so we can assume that we are online
+        upload_failed_ids(LOG)
+
+def post_osis_bulk(osis, month, day, year):
+    """Send id to the server for attendance"""
+    if OFFLINE:
+        append_log(osis, LOG_FAILED)
+        return
+
+    data = {
+        "id": osis,
+        "month": month,
+        "day": day,
+        "year": year
     }
     response = send_request("/", data)
     if len(response) == 0:
@@ -450,33 +479,35 @@ def main():
                 year = display.get_number(prompt="Year (####): ")
                 delete_date(osis, month, day, year)
             elif choice == 10 and not OFFLINE:
+                delete_today()
+            elif choice == 11 and not OFFLINE:
                 confirm = display.get_input(prompt="Are you sure you want to delete all the data? (y/n) ")
                 if confirm.lower() == "y":
                     display.add_message("Clearing the database...", color=display.YELLOW)
                     drop_database()
                 else:
                     display.add_message("Aborting", color=display.RED)
-            elif choice == 11 and not OFFLINE:
-                upload_all_failed_ids()
             elif choice == 12 and not OFFLINE:
+                upload_all_failed_ids()
+            elif choice == 13 and not OFFLINE:
                 osis = display.get_number(prompt="Student's ID: ")
                 get_student_percentage(osis)
-            elif choice == 13:
+            elif choice == 14:
                 if OFFLINE:
                     if login():
                         OFFLINE = False
                 else:
                     display.add_message("You are already online", color=display.YELLOW)
-            elif choice == 14:
-                upload_data()
             elif choice == 15:
+                upload_data()
+            elif choice == 16:
                 return
             elif OFFLINE:
                 display.add_message("You are currently in offline mode. available options are:", color=display.YELLOW)
                 display.add_message("1)  Take attendance for today", color=display.YELLOW)
                 display.add_message("2)  Take attendance for a specific day", color=display.YELLOW)
-                display.add_message("13) Go online", color=display.YELLOW)
-                display.add_message("15) Exit", color=display.YELLOW)
+                display.add_message("14) Go online", color=display.YELLOW)
+                display.add_message("16) Exit", color=display.YELLOW)
                 display.add_message("For more functionality, re-run the program or choose option 13", color=display.YELLOW)
             else:
                 display.add_message("Invalid choice.", color=display.RED)

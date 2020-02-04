@@ -1,0 +1,4 @@
+cron:
+    #- description: "Monthly attendance sending"
+    #url: admin/mail/test
+    #schedule: 1 of month 00:00
