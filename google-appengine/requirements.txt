@@ -10,6 +10,6 @@ requests==2.22.0
 authlib==0.14.1
 google-api-python-client==1.7.11
 google-auth==1.8.2
-Jinja2==2.10.3
+Jinja2==2.11.1
 markupsafe==1.1.1
 flask-mail==0.9.1
