@@ -55,6 +55,17 @@ def dump_data():
             retStr += "ID: %s\n%s\n\n" % (student.get_id(), student.get_attendance())
     return retStr
 
+def delete_day(month, day, year):
+    client = ndb.Client()
+    students = Student.query()
+    counter = 0
+    with client.context() as context:
+        for student in students.iter():
+            if student.present_on(month, day, year):
+                student.delete_date(month, day, year)
+                counter += 1
+    return f"Deleted {counter} entries"
+
 def get_day(month, day, year):
     client = ndb.Client() 
     students = Student.query()
@@ -111,18 +122,23 @@ def get_csv(dates):
     retStr += "\n"
     with client.context() as context:
         for student in students.iter():
+            isActive = False
             id = int(student.get_id())
-            retStr += "%s," % id
+            toRet = ""
+            toRet += "%s," % id
             if id in osis_data:
-                retStr += osis_data[id] + ","
+                toRet += osis_data[id] + ","
             else:
-                retStr += ","
+                toRet += ","
             for i in range(numDates):
                 if dates[i] in student.attendance_dates:
-                    retStr += "X"
+                    isActive = True
+                    toRet += "X"
                 if i < numDates - 1:
-                    retStr += ","
-            retStr += "\n"
+                    toRet += ","
+            toRet += "\n"
+            if isActive:
+                retStr += toRet
     return retStr
 
 def drop_database():

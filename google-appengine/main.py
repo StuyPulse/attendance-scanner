@@ -1,9 +1,12 @@
 from flask import Flask, request, redirect, url_for, render_template
+from flask_mail import Mail, Message
 from functools import wraps
 from werkzeug.security import check_password_hash
 from google.cloud import ndb
-from models import Administrator, Student
+from models import Administrator, Student, Settings
 import os
+from datetime import datetime
+import requests
 
 import students
 import admin
@@ -16,6 +19,20 @@ app.register_blueprint(admin.app)
 app.register_blueprint(google_auth.app)
 
 app.secret_key = admin.app.secret_key
+
+app.config.update(dict(
+    DEBUG = True,
+    MAIL_SERVER = 'smtp.gmail.com',
+    MAIL_PORT = 465,
+    MAIL_USE_TLS = False,
+    MAIL_USE_SSL = True,
+    MAIL_USERNAME = 'attendance@stuypulse.com',
+    MAIL_PASSWORD = Settings.get("FN_FLASK_EMAIL_PASSWORD"),
+))
+
+mail = Mail(app)
+mail.connect()
+
 # Note: We don't need to call run() since our application is embedded within
 # the App Engine WSGI application server.
 
@@ -87,7 +104,10 @@ def month():
             year = int(request.form["year"])
         except ValueError:
             return "ERROR: Invalid Date"
-        return students.get_month(month, year)
+        dates = students.get_month(month, year)
+        if 'csv' in request.form:
+            return students.get_csv(dates).replace('\n', '<br/>')
+        return dates
     else:
         return "ERROR: Malformed request\n"
 
@@ -147,11 +167,29 @@ def delete():
             return "ERROR: Invalid date\n"
         with client.context():
             student = ndb.Key(Student, id).get()
-        if student:
-            student.delete_date(month, day, year)
-        else:
-            return "ERROR: Student does not exist\n"
+            if student:
+                student.delete_date(month, day, year)
+            else:
+                return "ERROR: Student does not exist\n"
         return "SUCCESS: Date deleted for %s" % id
+    else:
+        return "ERROR: Malformed request\n"
+
+@app.route("/deletedate", methods=['POST'])
+@authenticate
+def delete_date():
+    client = ndb.client()
+    if 'month' in request.form and\
+        'day' in request.form and\
+        'year' in request.form:
+        try:
+            day = int(request.form["day"])
+            month = int(request.form["month"])
+            year = int(request.form["year"])
+        except ValueError:
+            return "ERROR: Invalid date\n"
+        with client.context():
+            return students.delete_day(month, day, year)
     else:
         return "ERROR: Malformed request\n"
 
@@ -243,8 +281,8 @@ def webconsole():
             elif action == 'month' and request.form['year'] == '':
                 return "ERROR: Invalid Year"
             elif action == 'month':
-                dates = students.get_month(int(request.form['month']), int(request.form['year']))
-                return students.get_csv(dates).replace('\n', '<br/>')
+                a = students.get_month(int(request.form['month']), int(request.form['year']))
+                return students.get_csv(a).replace("\n","<br/>")
             elif action == 'student':
                 id = request.form["student"]
                 retStr = "Attendance for " + id + "<br/>"
@@ -262,6 +300,34 @@ def webconsole():
             return "ERROR: Malformed request"
     else:
         return render_template("login.html")
+
+@app.route("/admin/mail/test", methods=['GET', 'POST'])
+def send_mail_test():
+    if request.headers.get('X-Appengine-Cron'):
+        payload = {'month': (datetime.now().month - 1) % 13, 
+                   'year': datetime.now().year,
+                   'csv': True,
+                   'email': "prog694@gmail.com",
+                   'pass': Settings.get("ATTENDANCE_PASSWORD")}
+        r = requests.post('http://stuypulse-attendance.appspot.com/month', payload)
+        fil = ""
+        for i in r.text.split('<br/>'):
+            fil += i + "\n"
+        months = ["January", "Feburary", "March", "April", "May", "June", "July", "August", "Septemeber", "October", "November", "December"]
+        email_body = f"Hello,\nThis is the automated attendance for {months[(datetime.now().month - 2) % 13]}. Please contact the Web Developers with any questions."
+        msg = Message(subject=f"Attendance for {months[(datetime.now().month - 2) % 13]}",
+                      sender=app.config.get("MAIL_USERNAME"),
+                      recipients=["victor.siu@stuypulse.com", "jblay@stuy.edu", "jlonard@schools.nyc.gov"],
+                      body=email_body
+                      )
+        msg.attach(filename=f"{payload['month']}-{payload['year']}.csv", 
+                   content_type="text/csv", 
+                   data=fil,
+                   )
+        mail.send(msg)
+        return "Done!"
+    raise Exception("Invalid Page. Please go back to the homepage.")
+    
 
 @app.errorhandler(404)
 def page_not_found(e):

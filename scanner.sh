@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+#WARNING: THIS IS NO LONGER SUPPORTED
+
 # Configuration
 SERVER_ADDR=https://stuypulse-attendance.appspot.com/
 SHOW_SERVER_RESPONSE_IF_SUCCESS=false

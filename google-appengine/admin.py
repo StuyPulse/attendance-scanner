@@ -6,9 +6,9 @@ import google_auth
 import google.oauth2.credentials
 import googleapiclient.discovery
 import os
-import requests
 
 app = Blueprint('admin', __name__)
+
 app.secret_key = Settings.get("FN_FLASK_SECRET_KEY")
 
 @app.route("/admin/create_admin", methods=['GET', 'POST'])
