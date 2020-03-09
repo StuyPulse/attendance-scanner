@@ -301,30 +301,32 @@ def webconsole():
     else:
         return render_template("login.html")
 
-@app.route("/admin/mail/test", methods=['POST'])
+@app.route("/admin/mail/test", methods=['GET', 'POST'])
 def send_mail_test():
-    payload = {'month': datetime.now().month, 
-               'year': datetime.now().year,
-               'csv': True,
-               'email': "prog694@gmail.com",
-               'pass': Settings.get("ATTENDANCE_PASSWORD")}
-    r = requests.post('http://127.0.0.1:5000/month', payload)
-    fil = ""
-    for i in r.text.split('<br/>'):
-        fil += i + "\n"
-    months = ["January", "Feburary", "March", "April", "May", "June", "July", "August", "Septemeber", "October", "November", "December"]
-    email_body = f"Hello,\nThis is the automated attendance for {months[datetime.now().month - 1]}. Please contact the Web Developers with any questions."
-    msg = Message(subject=f"Attendance for {months[datetime.now().month - 1]}",
-                  sender=app.config.get("MAIL_USERNAME"),
-                  recipients=["victor.siu@stuypulse.com"],
-                  body=email_body
-                  )
-    msg.attach(filename="attendance.csv", 
-               content_type="text/csv", 
-               data=fil,
-               )
-    mail.send(msg)
-    return "Done!"
+    if request.headers.get('X-Appengine-Cron'):
+        payload = {'month': (datetime.now().month - 1) % 13, 
+                   'year': datetime.now().year,
+                   'csv': True,
+                   'email': "prog694@gmail.com",
+                   'pass': Settings.get("ATTENDANCE_PASSWORD")}
+        r = requests.post('http://stuypulse-attendance.appspot.com/month', payload)
+        fil = ""
+        for i in r.text.split('<br/>'):
+            fil += i + "\n"
+        months = ["January", "Feburary", "March", "April", "May", "June", "July", "August", "Septemeber", "October", "November", "December"]
+        email_body = f"Hello,\nThis is the automated attendance for {months[(datetime.now().month - 2) % 13]}. Please contact the Web Developers with any questions."
+        msg = Message(subject=f"Attendance for {months[(datetime.now().month - 2) % 13]}",
+                      sender=app.config.get("MAIL_USERNAME"),
+                      recipients=["victor.siu@stuypulse.com", "jblay@stuy.edu", "jlonard@schools.nyc.gov"],
+                      body=email_body
+                      )
+        msg.attach(filename=f"{payload['month']}-{payload['year']}.csv", 
+                   content_type="text/csv", 
+                   data=fil,
+                   )
+        mail.send(msg)
+        return "Done!"
+    raise Exception("Invalid Page. Please go back to the homepage.")
     
 
 @app.errorhandler(404)
