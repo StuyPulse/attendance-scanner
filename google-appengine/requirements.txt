@@ -5,10 +5,10 @@
 #
 # Note: The `lib` directory is added to `sys.path` by `appengine_config.py`.
 Flask==1.1.1
-google-cloud-ndb==0.2.0
 requests==2.23.0
+google-cloud-ndb==1.1.1
 authlib==0.14.1
-google-api-python-client==1.7.11
+google-api-python-client==1.7.12
 google-auth==1.8.2
 Jinja2==2.10.3
 markupsafe==1.1.1
