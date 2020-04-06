@@ -4,7 +4,7 @@
 # in `lib/` subdirectory.
 #
 # Note: The `lib` directory is added to `sys.path` by `appengine_config.py`.
-Flask==1.1.1
+Flask==1.1.2
 requests==2.23.0
 google-cloud-ndb==1.1.1
 authlib==0.14.1
