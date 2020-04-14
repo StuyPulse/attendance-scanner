@@ -32,3 +32,5 @@ Visit `localhost:5000/admin/create_admin` to create an administrator
 #### Deploying to Google App Engine
 1) Run `gcloud config set project stuypulse-attendance`
 2) Run `gcloud app deploy`
+#### Automatic Email Not Working
+It may be possible that less secure apps got turned on for our automatic gmail account. Please contact the web developers to turn it back off.
