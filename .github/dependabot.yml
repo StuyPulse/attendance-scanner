@@ -1,0 +1,27 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "10:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: google-auth
+    versions:
+    - "> 1.8.2, < 2"
+  - dependency-name: google-cloud-ndb
+    versions:
+    - "> 0.2.0, < 0.3"
+  - dependency-name: google-api-python-client
+    versions:
+    - 1.12.8
+    - 2.0.2
+    - 2.1.0
+    - 2.2.0
+  - dependency-name: google-cloud-ndb
+    versions:
+    - 1.7.3
+  - dependency-name: jinja2
+    versions:
+    - 2.11.2
